@@ -1,0 +1,3 @@
+h3. Build/Test Mantra
+
+*  rm -r -force build; mkdir build; pushd build; cmake ..; cmake --build .; ctest -C Debug; popd

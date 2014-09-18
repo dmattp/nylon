@@ -1,0 +1,4 @@
+Nylon Copyright (c) 2013 David M. Placek
+
+Nylon provides a simple coroutine scheduler to implement event-driven processes as coroutines.  Basic support is provided for timers, message passing between coroutines, events, logging, threaded C routines, and lanes integretaion.
+
