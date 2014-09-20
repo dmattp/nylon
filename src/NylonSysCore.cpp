@@ -574,7 +574,33 @@ namespace {
        int rc = clock_gettime( CLOCK_MONOTONIC, &ts );
        return double(ts.tv_sec) + double(ts.tv_nsec)/double(1000*1000*1000);
     }
-#endif 
+#endif
+
+    // for testing threading; read std in until EOF.
+    void do_cthread_getline( ThreadReporter reporter )
+    {
+        while( !std::cin.eof() )
+        {
+            std::string s;
+
+            std::cout << "getline:" << std::endl;
+            //std::getline( std::cin, s );
+            std::cin >> s;
+            std::cout << "gotline: " << s << std::endl;            
+
+            if( !std::cin.eof() )
+            {
+                reporter.report(s);
+            }
+        }
+    }
+    
+    StdFunctionCaller
+    cthread_getline()
+    {
+        return std::bind( &do_cthread_getline, std::placeholders::_1 );
+    }
+    
 } // end, anonymous namespace
 
 
@@ -648,6 +674,10 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
    ];
 
 
+   module( lua.state(), "NylonTest" ) [
+       def( "cthread_getline", &cthread_getline )
+   ];
+   
    return 0;
 }
 
