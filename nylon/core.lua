@@ -336,6 +336,11 @@ function cord:resume()
    if not rc then
       wv.log('core,error','coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
              self.name, tostring(rc), tostring(err), debug.traceback(self.co) )
+      if true then
+         print(string.format('coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
+                             self.name, tostring(rc), tostring(err), debug.traceback(self.co)) )
+         os.exit(1)
+      end
       self.dead = true
       cord_cleanup_on_dead_or_exit( self )
    else
@@ -592,7 +597,7 @@ local function new_evt( cord, evtname, evtfun )
    end
    return setmetatable( e, {
                     __call = function( t, data )
-                       wv.log('evt','called event=%s for %s handler=%s', evtname,  cord.name, type(handler) )
+                       wv.log('debug','called event=%s for %s handler=%s', evtname,  cord.name, type(handler) )
                        if handler then
                           cord:add_pending( function() 
                                                -- wv.log('evt','calling event handler cord=%s running=%s', cord.name, comapper[coroutine.running()].name)
@@ -631,7 +636,7 @@ local evtmetatable = {
    end,
    __newindex = function( t, ndx, v )
 --      print( 'newindex set evt=', ndx )
-      wv.log('debug','make new key=%s',ndx)
+      wv.log('evt','make new key=%s',ndx)
       if 'function' == type(v) then
          if not t.__eventstore[ndx] then
             local evt = new_evt( t.__cord, ndx, v )
@@ -648,6 +653,11 @@ local evtmetatable = {
 }
 
 
+function cord:has_event(name)
+   return self.event.__eventstore[name]
+end
+
+
 
 local function nylon_create_cord( name, mainfun, ... )
    local self = metacow( cord )
@@ -660,7 +670,7 @@ local function nylon_create_cord( name, mainfun, ... )
    self.mailboxes = {} -- created as needed in mbox_find
    self.pending = {}
    self.event = setmetatable( { __cord = self,
-                                __eventstore = {}
+                                __eventstore = {},
                               }, evtmetatable )
    -- print( self.event.red )
    
@@ -886,13 +896,15 @@ end
 
 function cord:sleep_manual( setWakeUp, ... ) 
    local expired = false
-   local function wkfun()
+   local rc
+   local function wkfun(val)
       expired = true
+      rc = val
       wv.log( 'trace,core,pre', "wkfun [%s] co=%s", self.name, tostring(coroutine.running()) )
-                             NylonSysCore.addCallback( function()
-                                                   waitlist_insert( self )
-                                                   extern_reschedule()
-                                                end )
+      NylonSysCore.addCallback( function()
+                                   waitlist_insert( self )
+                                   extern_reschedule()
+      end )
    end
    setWakeUp( wkfun, ... )
 
@@ -908,6 +920,7 @@ function cord:sleep_manual( setWakeUp, ... )
       end
    until expired
 
+   return rc
 end
 
 
