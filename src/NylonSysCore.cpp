@@ -598,7 +598,7 @@ namespace {
     StdFunctionCaller
     cthread_getline()
     {
-        return std::bind( &do_cthread_getline, std::placeholders::_1 );
+       return StdFunctionCaller(std::bind( &do_cthread_getline, std::placeholders::_1 ));
     }
     
 } // end, anonymous namespace
