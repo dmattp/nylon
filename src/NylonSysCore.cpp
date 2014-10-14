@@ -577,28 +577,20 @@ namespace {
 #endif
 
     // for testing threading; read std in until EOF.
-    void do_cthread_getline( ThreadReporter reporter )
+    void do_cthread_getchar( ThreadReporter reporter )
     {
-        while( !std::cin.eof() )
+        while( !feof(stdin) )
         {
-            std::string s;
-
-            std::cout << "getline:" << std::endl;
-            //std::getline( std::cin, s );
-            std::cin >> s;
-            std::cout << "gotline: " << s << std::endl;            
-
-            if( !std::cin.eof() )
-            {
-                reporter.report(s);
-            }
+            int c = getchar();
+            if ( c != EOF )
+                reporter.report( (char)c );
         }
     }
     
     StdFunctionCaller
-    cthread_getline()
+    cthread_getchar()
     {
-       return StdFunctionCaller(std::bind( &do_cthread_getline, std::placeholders::_1 ));
+       return StdFunctionCaller(std::bind( &do_cthread_getchar, std::placeholders::_1 ));
     }
     
 } // end, anonymous namespace
@@ -675,7 +667,7 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
 
 
    module( lua.state(), "NylonTest" ) [
-       def( "cthread_getline", &cthread_getline )
+       def( "cthread_getchar", &cthread_getchar )
    ];
    
    return 0;

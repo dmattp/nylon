@@ -1,0 +1,11 @@
+
+* Modify [src/CMakeLists.txt] to specify the location of boost, lua, and luabind packages.
+* Use standard CMake build process, e.g., mkdir build; cd build; cmake ..; cmake --build .; ctest -C 
+* Build process will create [syscore.so|dll]
+* To use Nylon it is recommended to put syscore.so|dll in the [nylon] subdirectory and modify your package.path 
+  and package.cpath to include the nylon location, so that "require 'nylon.core'" will import [nylon/core.lua]
+  and "require 'nylon.syscore'" will import [nylon/syscore.so|dll].
+  
+
+
+

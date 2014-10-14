@@ -497,6 +497,7 @@ local function mbox_getmsg( self, box, timeout )
    end
 end
 
+
 -- wait on a message from a list of mailboxes
 -- returns: message, mailbox name
 local function mbox_getmsg_any( self, boxnames )
@@ -1036,6 +1037,13 @@ function cord:getmsg( box_or_timeout, timeout )
       return mbox_getmsg( self, self.mail )
    end
 end
+
+function cord:messages( box )
+   return function()
+      return self:getmsg( box )
+   end
+end
+
 
 function cord:getmsg_any( boxlist )
    return mbox_getmsg_any( self, boxlist )
