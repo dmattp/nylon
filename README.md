@@ -17,7 +17,7 @@ Distributed under the MIT license, please see [doc/license.txt] for details.
 
 # Motivation
 
-Managing concurrency is a perennial challenge in designing software systems.  The most common approaches to managing concurrency utilize either preemptive threading or event driven frameworks.  Preemptive threading is notoriously difficult to do properly and breeds subtle race conditions and locking problems.  Event driven frameworks avoid the problems of preemptive threading but may require algorithms and processes to be expressed in a disjointed and fragmented form.
+Managing concurrency is a perennial challenge in designing software systems.  The most common approaches to managing concurrency utilize either preemptive threading or event driven frameworks.  Preemptive threading is notoriously difficult to do properly and breeds subtle race conditions and locking problems.  Event driven frameworks avoid the complexity of preemptive threading but this often requires algorithms and processes to be expressed in a disjointed and fragmented form.
 
 Co-operative multithreading, as with Lua's coroutines, can offer a "sweet spot" between fully preemptive threading and traditional event driven approaches.  Unlike event driven systems, algorithms can be expressed in a straightforward and linear fashion while the absence of preemption substantially reduces the need for locking and the risk of subtle race conditions.
 
