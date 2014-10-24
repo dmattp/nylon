@@ -1,5 +1,9 @@
 Nylon Copyright (c) 2013 David M. Placek
 
+# Objective
+
+Nylon aims to provide a framework which eases the implementation of coroutine based systems by providing basic communication services such as messaging, events, and timers as well as providing mechanisms for interfacing coroutines with system threads and event loops where it is necessary to utliize blocking or high latency library calls or integrate with an existing event based framework.
+
 # License
 
 Distributed under the MIT license, please see [doc/license.txt] for details.
@@ -11,20 +15,13 @@ Distributed under the MIT license, please see [doc/license.txt] for details.
 * cmake
 * glib-2.0 (linux only)
 
-# Objective
-
-Nylon aims to provide a framework which eases the implementation of coroutine based systems by providing basic communication services such as messaging, events, and timers as well as providing mechanisms for interfacing coroutines with system threads and event loops where it is necessary to utliize blocking or high latency library calls or integrate with an existing event based framework.
-
 # Motivation
 
 Managing concurrency is a perennial challenge in designing software systems.  The most common approaches to managing concurrency utilize either preemptive threading or event driven frameworks.  Preemptive threading is notoriously difficult to do properly and breeds subtle race conditions and locking problems.  Event driven frameworks avoid the problems of preemptive threading but may require algorithms and processes to be expressed in a disjointed and fragmented form.
 
 Co-operative multithreading, as with Lua's coroutines, can offer a "sweet spot" between fully preemptive threading and traditional event driven approaches.  Unlike event driven systems, algorithms can be expressed in a straightforward and linear fashion while the absence of preemption substantially reduces the need for locking and the risk of subtle race conditions.
 
-In admirable lua style, coroutines provide a powerful, elegant, and minimal primitive for supporting cooperative multithreFading.  
-It is left as an exercise for the coder to provide traditional higher level concurrency abstractions such as messaging and
-events- and to successfully integrate cooperative threads with preemptive threads, blocking i/o, and event frameworks. 
-The Nylon core has grown out of one coder's attempt to complete this exercise and perhaps others may find it useful.
+In admirable lua style, coroutines provide a powerful, elegant, and minimal primitive for supporting cooperative multithreading.  It is left as an exercise for the coder to provide traditional concurrency abstractions such as messaging and events- and to successfully integrate cooperative threads with preemptive threads, blocking i/o, and event frameworks. The Nylon core has grown out of one coder's attempt to complete this exercise and perhaps others may find it useful.
 
 # Usage
 
@@ -152,8 +149,7 @@ Cords may be yielded manually:
           end)
     
 
-In some cases, it may be desireable to block a cord until some specific event occurs, such as a callback from native C code.  
-This can be accomplished with the "sleep_manual" function which provides a manual "wake-up" mechanism.
+In some cases, it may be desireable to unschedule a cord until some specific event occurs, such as a callback from native C code. This can be accomplished with the "sleep_manual" function which provides a manual "wake-up" mechanism.
 
 
     Nylon.cord('wait_for_c_library', 
@@ -219,9 +215,7 @@ This is a heavier-weight option as lanes creates a separate lua state for each t
 similarly allows high latency and blocking i/o operations to be moved to a separate thread while
 leaving the main application thread free to run the preemptive cords as neeeded.
 
-Nylon's main loop is integrated with glib on linux which allows Nylon cords to co-exist well with
-GUI libraries such as GTK, QT, and IUP, and a similar implementation for Windows works at least
-with Qt and IUP (not sure about GTK on Windows).
+Nylon's main event loop is integrated with glib on linux which allows Nylon cords to co-exist well with GUI libraries such as GTK, QT, and IUP, and a similar implementation for Windows works at least with Qt and IUP (not sure about GTK on Windows).
 
 
 # Installation
