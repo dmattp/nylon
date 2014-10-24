@@ -23,6 +23,11 @@ Co-operative multithreading, as with Lua's coroutines, can offer a "sweet spot" 
 
 In admirable lua style, coroutines provide a powerful, elegant, and minimal primitive for supporting cooperative multithreading.  It is left as an exercise for the coder to provide traditional concurrency abstractions such as messaging and events- and to successfully integrate cooperative threads with preemptive threads, blocking i/o, and event frameworks. The Nylon core has grown out of one coder's attempt to complete this exercise and perhaps others may find it useful.
 
+# Status
+
+As of 2014-10-24 nylon is still in early beta stage and under active development.  The build process hasn't been fortified to a wide array of environments and 
+will likely need some tweaking for your setup.
+
 # Usage
 
     The basic pattern for using Nylon is as follows:
