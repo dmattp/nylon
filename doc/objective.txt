@@ -1,0 +1,51 @@
+Nylon Copyright (c) 2013 David M. Placek
+
+h3. Objective
+
+Nylon aims to provide a framework which eases the implementation of coroutine based systems by providing basic communication services such as messaging, events, and timers as well as providing mechanisms for interfacing coroutines with system threads and event loops where it is necessary to utliize blocking or high latency library calls or integrate with an existing event based framework.
+
+h3. Motivation
+
+Managing concurrency is a perennial challenge in designing software systems.  The most common approaches to managing concurrency utilize either preemptive threading or event driven frameworks.  Preemptive threading is notoriously difficult to do properly and breeds subtle race conditions and locking problems.  Event driven frameworks avoid the problems of preemptive threading but may require algorithms and processes to be expressed in a disjointed and fragmented form.
+
+Co-operative multithreading, as with Lua's coroutines, can offer a "sweet spot" between fully preemptive threading and traditional event driven approaches.  Unlike event driven systems, algorithms can be expressed in a straightforward and linear fashion while the absence of preemption substantially reduces the need for locking and the risk of subtle race conditions.
+
+In admirable lua style, coroutines provide a powerful, elegant, and minimal primitive for supporting cooperative multithreFading.  
+It is left as an exercise for the coder to provide traditional higher level concurrency abstractions such as messaging and
+events- and to figure out how to integrate cooperative threads with preemptive threads, blocking i/o, and event frameworks. 
+The Nylon core has grown out of one coder's attempt to complete this exercise and perhaps others may find it useful.
+
+
+
+(Somewhere else)
+
+h3. How Do I Build a System With Nylon?
+
+In general the idea is that all blocking or high latency I/O should be moved to a thread and integrated with the :cthreaded() 
+functions. This is not technically necessary of course if you don't care if all your coroutines block while you're, e.g., waiting on
+a socket of course, but generally you don't want one coroutine making a blocking call to stall all the others, so as a rule,
+anything operation which could take longer than you're willing to pause all the other coroutines for should be done in
+a preemptive system thread.  For many systems, it may be acceptable if the active coroutine stalls everybody else while 
+it performs a database query that takes 800 milliseconds.  But for e.g., a system that is performing real time graphics animation 
+this would be unacceptable.  Using the cthreaded() routines to move your database operations to a preemptive system 
+thread means that when one coroutine makes a long database call, it simply sleeps waiting for the system thread to finish
+the work, and while it is waiting to wake up after completion of the database query all the other coroutines can continue
+running and your real time graphics animations continue to run smoothly.
+
+So when it is necessary to move calls to a preemptive thread really depends on what your tolerance for latency is.  Nylon tries
+to make this as easy as possible, but it will always be more complicated to coordinate I/O between a preemptive and cooperative
+thread than to not coordinate the I/O, so it's generally only worth the extra effort when you can't tolerate your coroutines 
+being delayed by the operation.
+
+That being said, the Nylon project is still very early in its infancy, and my hope is that as time goes on there will be
+more and more libraries available that take care of many common I/O and high latency operations in a Nylon-compatible fashion,
+so that things like socket communication, database I/O, file I/O, etc. all have out-of-the-box libraries which coordinate
+doing these operations 
+
+
+
+
+
+
+
+
