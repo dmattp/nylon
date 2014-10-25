@@ -81,7 +81,6 @@ public:
          pty;
       }
 
-//      pthread_mutex_unlock( &mute );
       nodispose->unref();
    }
 
@@ -137,8 +136,6 @@ public:
       tail_ = prev;
 
       pty;
-
-//      pthread_mutex_unlock( &mute );
 
       return prev;
    }

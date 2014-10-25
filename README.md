@@ -21,12 +21,11 @@ Managing concurrency is a perennial challenge in designing software systems.  Th
 
 Co-operative multithreading, as with Lua's coroutines, can offer a "sweet spot" between fully preemptive threading and traditional event driven approaches.  Unlike event driven systems, algorithms can be expressed in a straightforward and linear fashion while the absence of preemption substantially reduces the need for locking and the risk of subtle race conditions.
 
-In admirable lua style, coroutines provide a powerful, elegant, and minimal primitive for supporting cooperative multithreading.  It is left as an exercise for the coder to provide traditional concurrency abstractions such as messaging and events- and to successfully integrate cooperative threads with preemptive threads, blocking i/o, and event frameworks. The Nylon core has grown out of one coder's attempt to complete this exercise and perhaps others may find it useful.
+Lua's coroutine functions follow the admirable lua style in providing a powerful, elegant, and minimal primitive for supporting cooperative multithreading.  But it is left as an exercise for the coder to provide traditional concurrency abstractions such as messaging and events- and to successfully integrate cooperative threads with preemptive threads, blocking i/o, and event frameworks. The Nylon core has grown out of one coder's attempt to complete this exercise and perhaps others may find it useful.
 
 # Status
 
-As of 2014-10-24 nylon is still in early beta stage and under active development.  The build process hasn't been fortified to a wide array of environments and 
-will likely need some tweaking for your setup.
+As of 2014-10-24 nylon is still in early beta stage and under active development. Documentation is scarce.  There is a lot of noise in the sources that needs to be cleaned up.  The build process hasn't been fortified to a wide array of environments and will likely need some tweaking for your setup.
 
 # Usage
 
@@ -228,3 +227,4 @@ Nylon's main event loop is integrated with glib on linux which allows Nylon cord
 See [doc/installation.txt]
 
 
+ 

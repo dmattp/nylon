@@ -1,5 +1,5 @@
-#ifndef WIN_WEAVE_SYSPORT_TIMER_H__
-#define WIN_WEAVE_SYSPORT_TIMER_H__
+#ifndef WIN_NYLON_SYSPORT_TIMER_H__
+#define WIN_NYLON_SYSPORT_TIMER_H__
 
 namespace NylonSysCore {
 

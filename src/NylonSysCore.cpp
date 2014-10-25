@@ -1,7 +1,6 @@
-// Nylon Copyright (c) 2013 David M. Placek see [doc/license.txt]
-//
-// syscore.cpp : 
-//
+//////////////////////////////////////////////////////////////////
+// Nylon Copyright (c) 2013-2014 David M. Placek see [doc/license.txt]
+//////////////////////////////////////////////////////////////////
 #include "stdafx.h"
 
 #include <iostream>
@@ -42,7 +41,6 @@ namespace NylonSysCore
 
       static void InsertPreAllocatedEvent( void* thing )
       {
-//         std::cout << "InsertPreAllocatedEvent" << std::endl;
          instance().m_eventQueue.InsertPreAllocatedEvent( thing );
       }
 
@@ -58,11 +56,18 @@ namespace NylonSysCore
           
           while( true )
           {
-              // std::cout << "Main thread sleeping" << std::endl;
               app.m_eventQueue.Wait();
-              // std::cout << "Main thread got event=" << GetCurrentThreadId() << std::endl;
               app.m_eventQueue.Process();
           }
+      }
+
+      // This may be needed e.g., in the case that you are using
+      // Gtk's main loop rather than Nylon.run(); in that case, the 
+      // nylon application must be initialized to hook into Glib's
+      // event loop.
+      static void InitApplication()
+      {
+         Application& app = instance();
       }
 
       static void processAndWait()
@@ -190,22 +195,6 @@ namespace NylonSysCore {
 
 
 
-
-
-
-
-namespace {
-   void resetTimer()
-   {
-      std::cout << "Starting 500ms timer, thread="
-#ifdef _WINDOWS         
-                << GetCurrentThreadId()
-#endif 
-                << std::endl;
-      NylonSysCore::Timer::oneShot( &resetTimer, Milliseconds(500) );
-   }
-}
-
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -282,14 +271,11 @@ namespace {
       delete o;
    }
 
-//    lua_State* primary_state;
     luabind::object rescheduleFunc;
 
     void doreschedule()
     {
-//        std::cout << "got doreschedule() call" << std::endl;
         rescheduleFunc();
-//         luabind::globals(primary_state)["RESCHEDULE__"]();
     }
 
     void setReschedule( luabind::object o )
@@ -299,44 +285,38 @@ namespace {
 
     static void empty()
     {
-        // std::cout << "got empty() callback" << std::endl;
     }
 
     static const std::function<void(void)> kEmpty( &empty );
     
     static void reschedule_empty()
     {
-        // std::cout << "got reschedule_empty() call" << std::endl;
         NylonSysCore::Application::InsertEvent(kEmpty );
     }
 
-
     void reschedule()
     {
-//        std::cout << "got reschedule() call" << std::endl;
         NylonSysCore::Application::InsertEvent( &doreschedule );
     }
     
    void addCallback( const luabind::object& o )
    {
       luabind::object* o2 = new luabind::object( o );
-//      qp::Application::InsertEvent( std::bind( &callLuaObject, o ) );
-//       *o2 = o;
       NylonSysCore::Application::InsertEvent( std::bind( &callLuaObject, o2 ) );
    }
 
    void addOneShot( int msExpiration, const luabind::object& o )
    {
       luabind::object* o2 = new luabind::object(o);
-      // *o2 = o;
       NylonSysCore::Timer::oneShot( std::bind( &callLuaObject, o2 ), Milliseconds(msExpiration) );
    }
 }
 
+// This may be useful for external libraries building on Nylon to set
+// callback events
 DLLEXPORT
 void LuaNylonSysCore_AddCallback( const std::function<void(void)>& cbfun )
 {
-    //const std::function<void(void)>* pcbfun = static_cast<const std::function<void(void)>*>( pcb );
     NylonSysCore::Application::InsertEvent( cbfun );
 }
 
@@ -379,7 +359,7 @@ private:
 // 2. Lua sees the threaded activity is ready to report, and the requesting
 // cord schedules a "halt" - a blocking operation that will insure the
 // original thread is not executing in Lua.  (this probably requires
-// that the silk scheduler exit completely to the main loop and prevent
+// that the Nylon scheduler exit completely to the main loop and prevent
 // re-scheduling entirely until the report completes - scheduling a
 // NylonSysCore event callback that "blocks" in C world will accomplish this.
 // 3. When the main thread blocks and waits, he signals a condition to wake
@@ -390,7 +370,6 @@ private:
 
 
 
-//#ifndef _WINDOWS
 #include "sys/nylon-sysport-threaded.h"
 
 
@@ -420,17 +399,13 @@ namespace {
    void run_c_threaded( StdFunctionCaller caller, const luabind::object& o )
    {
       ThreadRunner* r = new ThreadRunner( caller, o );
-//      std::cout << "enter run_c_threaded" << std::endl;
       r->run();
    }
 
    void run_c_threaded_with_exit( StdFunctionCaller caller, const luabind::object& o, const luabind::object& exiter )
    {
-//      std::cout << "enter run_c_threaded_with_exit" << std::endl;
       ThreadRunner* r = new ThreadRunner( caller, o, exiter );
-//      std::cout << "run_c_threaded_with_exit() calling r->run()" << std::endl;
       r->run();
-//      std::cout << "run_c_threaded_with_exit() returned from r->run()" << std::endl;
    }
    
 }
@@ -452,59 +427,10 @@ namespace {
       (  std::bind( callLuaObjectNoDelete, &sysevtcbfun )
       );
    }
-
-
-
-#ifdef _WINDOWS
-BOOL SetPrivilege(
-    HANDLE hToken,          // access token handle
-    LPCTSTR lpszPrivilege,  // name of privilege to enable/disable
-    BOOL bEnablePrivilege   // to enable or disable privilege
-    ) 
-{
-    TOKEN_PRIVILEGES tp;
-    LUID luid;
-
-    if ( !LookupPrivilegeValue( 
-            NULL,            // lookup privilege on local system
-            lpszPrivilege,   // privilege to lookup 
-            &luid ) )        // receives LUID of privilege
-    {
-        printf("LookupPrivilegeValue error: %u\n", GetLastError() ); 
-        return FALSE; 
-    }
-
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Luid = luid;
-    if (bEnablePrivilege)
-        tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    else
-        tp.Privileges[0].Attributes = 0;
-
-    // Enable the privilege or disable all privileges.
-
-    if ( !AdjustTokenPrivileges(
-           hToken, 
-           FALSE, 
-           &tp, 
-           sizeof(TOKEN_PRIVILEGES), 
-           (PTOKEN_PRIVILEGES) NULL, 
-           (PDWORD) NULL) )
-    { 
-          printf("AdjustTokenPrivileges error: %u\n", GetLastError() ); 
-          return FALSE; 
-    } 
-
-    if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
-
-    {
-          printf("The token does not have the specified privilege. \n");
-          return FALSE;
-    } 
-
-    return TRUE;
 }
 
+#ifdef _WINDOWS
+namespace {
     double uptime()
     {
         ULONG ticks = GetTickCount();
@@ -512,15 +438,9 @@ BOOL SetPrivilege(
         return rc;
     }
 
-    
-
-    void addCreateGlobalPrivilege()
-    {
-        HANDLE hToken;
-        OpenProcessToken( GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken );
-        SetPrivilege( hToken, L"SeCreateGlobalPrivilege", TRUE );
-    }
-
+    // these should really be moved to a separate "OS support" library, but
+    // it was convenient to have them here when I didn't have that yet.
+    // Sorry for the mess.
     luabind::object systemTimeToLua( lua_State* L, const SYSTEMTIME& stTimestamp )
     {
         luabind::object t = luabind::newtable( L );
@@ -564,8 +484,9 @@ BOOL SetPrivilege(
 
         return times;
     }
-#else // not windows
 } // end, anonymous namespace
+
+#else // not windows
 #include <time.h>
 namespace {
     double uptime()
@@ -574,8 +495,11 @@ namespace {
        int rc = clock_gettime( CLOCK_MONOTONIC, &ts );
        return double(ts.tv_sec) + double(ts.tv_nsec)/double(1000*1000*1000);
     }
+}
 #endif
 
+// these functions are for a quick/easy test of cthreaded type operations.
+namespace {
     // for testing threading; read std in until EOF.
     void do_cthread_getchar( ThreadReporter reporter )
     {
@@ -592,7 +516,6 @@ namespace {
     {
        return StdFunctionCaller(std::bind( &do_cthread_getchar, std::placeholders::_1 ));
     }
-    
 } // end, anonymous namespace
 
 
@@ -624,8 +547,6 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
    ThreadRunner::Init();
 #endif 
 
-//   primary_state = L;
-
    open( lua.state() );
    
    module( lua.state(), "NylonSysCore" ) [
@@ -634,7 +555,8 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
       def( "wakeWaker", &WakerUpper::wakethis1 ),
       def( "reschedule", &reschedule ),
       def( "setReschedule", &setReschedule ),
-      def( "mainLoop", &NylonSysCore::Application::MainLoop ),
+      def( "initApplication", &NylonSysCore::Application::InitApplication ),
+      def( "mainLoop", &NylonSysCore::Application::MainLoop ), 
 
       def( "processAndWait", &NylonSysCore::Application::processAndWait ),      
       def( "reschedule_empty", &reschedule_empty ),     
@@ -643,12 +565,9 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
       , def( "run_c_threaded", &run_c_threaded )
       , def( "run_c_threaded_with_exit", &run_c_threaded_with_exit )
       , def( "uptime", &uptime )
-#if _WINDOWS      
-      , def( "addCreateGlobalPrivilege", &addCreateGlobalPrivilege )
-      , def( "GetFileTime", &GetFileTime_ )
-#endif 
    ];
 
+   
    module( lua.state() ) [
          class_<WakerUpper>("WakerUpper")
          .def( constructor<const object&>() )
@@ -660,9 +579,6 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
    module( lua.state() ) [
          class_<StdFunctionCaller>("StdFunctionCaller")
          .def( "run", &StdFunctionCaller::run )
-//         .def( constructor<>() )
-//          .def( "wake", &WakerUpper::wake )
-//          .def( "self", &WakerUpper::self )
    ];
 
 

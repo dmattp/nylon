@@ -38,11 +38,10 @@ namespace NylonSysCore {
     public:
        static gint gtk_sys_poller( GPollFD* ufds, guint nfds, gint timeout_ )
        {
-           static int calls = 0;
-           if( 0 == ++calls%100000) {
-             std::cout << calls << " gtk poll, i=" << (void*)i
-                       << " nfds=" << nfds << " tout=" << timeout_ << std::endl;
-           }
+//            if( 0 == ++calls%100000) {
+//              std::cout << calls << " gtk poll, i=" << (void*)i
+//                        << " nfds=" << nfds << " tout=" << timeout_ << std::endl;
+//            }
           pollfd fds[nfds+1];
           int i;
           for( i = 0; i < nfds; ++i )
@@ -56,11 +55,11 @@ namespace NylonSysCore {
           
           int rc1 = ppoll( fds, nfds+1, &ts, nullptr );
 //           return rc1;
-          if( fds[i].revents )
-          {
-             std::cout << "Nylon ppol rc=" << rc1 << " i=" << i << " POLLIN=" << POLLIN
-                       << " fds[i].revents=" << fds[i].revents << std::endl;
-          }
+//           if( fds[i].revents )
+//           {
+//              std::cout << "Nylon ppol rc=" << rc1 << " i=" << i << " POLLIN=" << POLLIN
+//                        << " fds[i].revents=" << fds[i].revents << std::endl;
+//           }
           
           if( fds[i].revents & POLLIN )
              SysportEventQueueBase::i->clearPipesAndDispatch();
@@ -97,12 +96,11 @@ namespace NylonSysCore {
           gpointer    user_data)
        {
           MySource* this1 = reinterpret_cast<MySource*>( source );
-          std::cout << "gs_dispatch" << std::endl;
           this1->self->clearPipesAndDispatch();
           this1->mypoll.revents = 0;
        }
        static void gs_finalize (GSource    *source ){ /* Can be NULL */
-          std::cout << "gs_finalize !!!" << std::endl;
+//          std::cout << "gs_finalize !!!" << std::endl;
        }
 
         SysportEventQueueBase()

@@ -1,5 +1,5 @@
-#ifndef WIN_WEAVE_SYSPORT_EVENTQ_H__
-#define WIN_WEAVE_SYSPORT_EVENTQ_H__
+#ifndef WIN_NYLON_SYSPORT_EVENTQ_H__
+#define WIN_NYLON_SYSPORT_EVENTQ_H__
 
 #include "stdafx.h"
 #include <Windows.h>
@@ -15,7 +15,7 @@ namespace NylonSysCore {
             hEventsAvailable =
                 CreateEvent
                 (  nullptr, FALSE, FALSE,
-                    // TEXT("Weave::ApplicationEventQueueApvailable")
+                    // TEXT("nylon::ApplicationEventQueueApvailable")
                     nullptr
                 );
         }
@@ -28,7 +28,7 @@ namespace NylonSysCore {
             WaitForSingleObject( hEventsAvailable, INFINITE );
         }
 
-        // return true if weave event rcvd, false otherwise
+        // return true if nylon event rcvd, false otherwise
         bool waiteventnylonorsystem()
         {
              // see e.g.,
@@ -45,7 +45,7 @@ namespace NylonSysCore {
             switch( rc )
             {
                case WAIT_OBJECT_0:
-                   return true;  // weave event
+                   return true;  // nylon event
 
                case (WAIT_OBJECT_0 + 1):
                    return false;

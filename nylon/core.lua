@@ -19,6 +19,7 @@
 -- :hasmsg
 -- :getmsg()/:msg() with mailbox
 -- :cthreaded, :cthreaded_multi
+-- Nylon.mklock
 
 -------- Not tested or private
 -- :nylonstatus()
@@ -1252,5 +1253,6 @@ return function( libargs )
       --                SysCore = NylonSysCore
       --             end
    end
+
    return exports
 end

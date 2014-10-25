@@ -1,5 +1,5 @@
-#ifndef WIN_NYLON_SYSPORT_TIMER_H__
-#define WIN_NYLON_SYSPORT_TIMER_H__
+#ifndef LINUX_NYLON_SYSPORT_TIMER_H__
+#define LINUX_NYLON_SYSPORT_TIMER_H__
 // coypright 2013 david m. placek all rights reserved
 
 #include <time.h>
@@ -177,16 +177,6 @@ namespace NylonSysCore {
          }
       
       private:
-//          static void TimerCallbackOneShot(void* lpParam, bool TimerOrWaitFired)
-//          {
-// //             std::cout << "TimerCallback; param=" << lpParam << " Fired=" << (DWORD)TimerOrWaitFired 
-// //                       << " Thread=" << GetCurrentThreadId() << std::endl;
-//             TQTimer* this1 = static_cast< TQTimer* >( lpParam );
-//             Application::InsertEvent( this1->m_callback );
-//             // this1->m_callback();
-//             delete this1;
-//          }
-
          ~TQTimer()
          {
          }
@@ -194,36 +184,33 @@ namespace NylonSysCore {
     
       static void InitTimerQueue()
       {
-//          if( !stTimer.queue )
-//             stTimer.queue = CreateTimerQueue();
       }
    };
 
-            void Timer::Statics::resetExpiry( const struct timespec& now, const struct timespec& front_expiry )
+   void Timer::Statics::resetExpiry( const struct timespec& now, const struct timespec& front_expiry )
+   {
+      struct itimerval itimer = { { 0 } };
+      itimer.it_interval.tv_usec = 100*1000; // 100ms re-send if we miss the signal
+      itimer.it_value.tv_sec  = front_expiry.tv_sec - now.tv_sec;
+      itimer.it_value.tv_usec = (front_expiry.tv_nsec - now.tv_nsec)/1000;
+      while( itimer.it_value.tv_usec < 0 )
       {
-            struct itimerval itimer = { { 0 } };
-            itimer.it_interval.tv_usec = 100*1000; // 100ms re-send if we miss the signal
-            itimer.it_value.tv_sec  = front_expiry.tv_sec - now.tv_sec;
-            itimer.it_value.tv_usec = (front_expiry.tv_nsec - now.tv_nsec)/1000;
-            while( itimer.it_value.tv_usec < 0 )
-            {
-               --itimer.it_value.tv_sec;
-               itimer.it_value.tv_usec += 1000000;
-            }
+         --itimer.it_value.tv_sec;
+         itimer.it_value.tv_usec += 1000000;
+      }
 //             std::cout << "TIMER reset expiry s=" << itimer.it_value.tv_sec
 //                       << " us=" << itimer.it_value.tv_usec << std::endl;
-            event = Application::PreAllocateEvent( &Timer::Statics::processTimers );
+      event = Application::PreAllocateEvent( &Timer::Statics::processTimers );
                
-            stTimer.set = 1;
-            if( itimer.it_value.tv_sec < 0  ||
-               ( itimer.it_value.tv_sec == 0 && itimer.it_value.tv_usec <= 0 ) )
-            {
-               itimer.it_value.tv_sec = 0;
-               itimer.it_value.tv_usec = 1;
-            }
-            setitimer( ITIMER_REAL, &itimer, nullptr );
-         }
-
+      stTimer.set = 1;
+      if( itimer.it_value.tv_sec < 0  ||
+         ( itimer.it_value.tv_sec == 0 && itimer.it_value.tv_usec <= 0 ) )
+      {
+         itimer.it_value.tv_sec = 0;
+         itimer.it_value.tv_usec = 1;
+      }
+      setitimer( ITIMER_REAL, &itimer, nullptr );
+   }
             
 }
        

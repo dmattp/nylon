@@ -7,5 +7,10 @@
   and "require 'nylon.syscore'" will import [nylon/syscore.so|dll].
   
 
+Linux notes:
 
+* Currently the linux build dumps syscore.so in [build/src]; I recommend copying this
+  manually to the [nylon] subdirectory with [core.lua] but if you prefer the .so to
+  be elsewhere just be sure your package.cpath is set correctly to find syscore.so
+  when "require 'nylon.syscore'" is used.
 
