@@ -56,7 +56,7 @@ namespace NylonSysCore
       {
           Application& app = instance();
           
-          while( true )
+          while( !app.m_exit )
           {
               // std::cout << "Main thread sleeping" << std::endl;
               app.m_eventQueue.Wait();
@@ -73,9 +73,29 @@ namespace NylonSysCore
 
           app.m_eventQueue.Process();
       }
+
+      static void processAndWaitNylonOrSystem()
+      {
+          Application& app = instance();
+
+          auto rc = app.m_eventQueue.WaitNylonSysCoreOrSystem();
+
+          switch( rc )
+          {
+              case ApplicationEventQueue::GOT_SYSTEM_EVENT:
+              case ApplicationEventQueue::GOT_NYLON_EVENT:
+                  app.m_eventQueue.Process();
+                  break;
+          }
+      }
        
 
       static void MainLoopWithSyseventCallback( const std::function<void(void)>& cbSysevent );
+
+       static void ForceExit()
+       {
+           instance().m_exit = true;
+       }
 
    private:
       static Application& instance()
@@ -87,6 +107,7 @@ namespace NylonSysCore
       }
 
       Application()
+      : m_exit(false)
       {
       }
    
@@ -154,14 +175,16 @@ namespace NylonSysCore
       };
 
       ApplicationEventQueue m_eventQueue;
+      bool m_exit;
    }; // end class Application
 
    void
    Application::MainLoopWithSyseventCallback( const std::function<void(void)>& cbSysevent    )
    {
-      while( true )
+      Application& app = instance();
+      while( !app.m_exit )
       {
-         auto rc = instance().m_eventQueue.WaitNylonSysCoreOrSystem();
+         auto rc = app.m_eventQueue.WaitNylonSysCoreOrSystem();
          // std::cout << "WaitOrMessage=" << rc << std::endl;
          switch( rc )
          {
@@ -310,6 +333,13 @@ namespace {
         NylonSysCore::Application::InsertEvent(kEmpty );
     }
 
+
+    static void exitLoop()
+    {
+        // std::cout << "insert 'exit' event" << std::endl;
+        NylonSysCore::Application::InsertEvent( &NylonSysCore::Application::ForceExit );
+    }
+    
 
     void reschedule()
     {
@@ -633,10 +663,12 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
       def( "addOneShot", &addOneShot ),
       def( "wakeWaker", &WakerUpper::wakethis1 ),
       def( "reschedule", &reschedule ),
+      def( "exitLoop", &exitLoop ),
       def( "setReschedule", &setReschedule ),
       def( "mainLoop", &NylonSysCore::Application::MainLoop ),
 
-      def( "processAndWait", &NylonSysCore::Application::processAndWait ),      
+      def( "processAndWait", &NylonSysCore::Application::processAndWait ),
+      def( "processAndWaitNylonOrSystem", &NylonSysCore::Application::processAndWaitNylonOrSystem ),            
       def( "reschedule_empty", &reschedule_empty ),     
 
       def( "sysevtCbLoop", &sysevtCbLoop )

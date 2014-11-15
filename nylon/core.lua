@@ -1195,6 +1195,7 @@ end
 
 -- local function nylon_uptime()
 
+local keepRunning = true
 
 local exports = {
              cord    = nylon_create_cord,   --
@@ -1211,9 +1212,21 @@ local exports = {
              end,
              run  = function()
                 extern_reschedule = function() NylonSysCore.reschedule_empty() end
-                while true do
+                while keepRunning do
                    NylonSysCore.processAndWait()
                    nylon_schedule()
+                end
+             end,
+             halt = function()
+                keepRunning = false
+                NylonSysCore.reschedule_empty()
+             end,
+             runWithCb  = function(cb)
+                extern_reschedule = function() NylonSysCore.reschedule_empty() end
+                while keepRunning do
+                   NylonSysCore.processAndWaitNylonOrSystem()
+                   nylon_schedule()
+                   cb()
                 end
              end,
              
