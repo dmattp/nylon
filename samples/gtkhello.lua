@@ -12,10 +12,11 @@
 -- There is an issue currently that "running" a modal dialog seems
 -- to block Nylon events that has to be worked around until fixed.
 
+require 'site'
+
 local lgi = require 'lgi'
 local Gtk = lgi.require('Gtk')
 
-require 'site'
 local Nylon = require 'nylon.core'()
 
 
