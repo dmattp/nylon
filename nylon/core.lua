@@ -310,6 +310,7 @@ local function cord_cleanup_on_dead_or_exit( self )
    cblist_run( self, 'exitwaiter' )
 end
 
+local nylonErrorHandler
 
 function cord:resume()
    if self.dead then
@@ -337,10 +338,10 @@ function cord:resume()
    if not rc then
       wv.log('core,error','coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
              self.name, tostring(rc), tostring(err), debug.traceback(self.co) )
-      if true then
-         print(string.format('coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
-                             self.name, tostring(rc), tostring(err), debug.traceback(self.co)) )
-         os.exit(1)
+      if nylonErrorHandler then
+         local msg = string.format('coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
+                               self.name, tostring(rc), tostring(err), debug.traceback(self.co))
+         nylonErrorHandler(self,msg)
       end
       self.dead = true
       cord_cleanup_on_dead_or_exit( self )
@@ -362,7 +363,11 @@ local function nylon_schedule()
    local function run_current_tasklist( currlist )
       for _, curr in ipairs( currlist ) do
          -- wv.log('extra','reschedule_tasks() task=%s co=%s', curr.name, tostring(curr.co) )
-         if not curr.dead then
+         if curr.dead then
+            if comapper[curr.co] then
+               cord_cleanup_on_dead_or_exit( curr )
+            end
+         else
             if curr.req_pause then
                clist_insert( threads, 'paused', head )
             else
@@ -411,6 +416,10 @@ local function nylon_destroy()
    end
 end
 
+function cord:stop()
+   self.dead = true
+   self.killed = true -- fwiw
+end
 
 
 -- 'thread local' storage - provides a table/environment 
@@ -419,6 +428,14 @@ local nylon_tls = setmetatable({ [true] = {} }, { __mode = 'k' })
 
 function cord:setenv( k, v )
    nylon_tls[self.co][k] = v
+end
+
+function cord:getenv( k )
+   if k then
+      return nylon_tls[self.co][k]
+   else
+      return nylon_tls[self.co]
+   end
 end
 
 local function nylon_getenv(k)
@@ -1221,6 +1238,9 @@ local exports = {
              halt = function()
                 keepRunning = false
                 NylonSysCore.reschedule_empty()
+             end,
+             setErrorHandler = function (errfun)
+                nylonErrorHandler = errfun
              end,
              runWithCb  = function(cb)
                 extern_reschedule = function() NylonSysCore.reschedule_empty() end
