@@ -464,9 +464,35 @@ namespace {
 namespace {
     double uptime()
     {
+#if 0
         ULONG ticks = GetTickCount();
-        double rc = double(ticks/1000) + double(ticks%1000)/1000.0;
-        return rc;
+        return (double(ticks/1000) + double(ticks%1000)/1000.0);
+#else
+        static bool gotInitTime;
+        static LARGE_INTEGER Frequency;
+        static LARGE_INTEGER StartingTime;
+        if( !gotInitTime )
+        {
+            QueryPerformanceFrequency(&Frequency); 
+            QueryPerformanceCounter(&StartingTime);
+            gotInitTime = true;
+        }
+        LARGE_INTEGER EndingTime, ElapsedMicroseconds;
+        QueryPerformanceCounter(&EndingTime);
+        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+
+//
+// We now have the elapsed number of ticks, along with the
+// number of ticks-per-second. We use these values
+// to convert to the number of elapsed microseconds.j
+// To guard against loss-of-precision, we convert
+// to microseconds *before* dividing by ticks-per-second.
+//
+
+        ElapsedMicroseconds.QuadPart *= 1000000;
+        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+        return (double)ElapsedMicroseconds.QuadPart / 1000000.0;
+#endif 
     }
 
     // these should really be moved to a separate "OS support" library, but
