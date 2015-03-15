@@ -23,12 +23,48 @@ namespace NylonSysCore {
 
 #include "mwsr-cbq.h"
 
+class recursive_mutex
+{
+public:
+    recursive_mutex()
+    {
+        InitializeCriticalSection(&m_cs);
+    }
+    ~recursive_mutex()
+    {
+        DeleteCriticalSection(&m_cs);
+    }
+    void lock()
+    {
+        EnterCriticalSection(&m_cs);
+    }
+    void unlock()
+    {
+        LeaveCriticalSection(&m_cs);
+    }
+    bool try_lock()
+    {
+        return !!TryEnterCriticalSection(&m_cs);
+    }
+private:
+    CRITICAL_SECTION m_cs;
+    recursive_mutex( const recursive_mutex& ); // not implemented; private to prevent copying.
+};
+
+
 
 namespace NylonSysCore
 {
    class Application
    {
    public:
+      static recursive_mutex luaLock_;
+       
+       static void Lock( bool yes )
+      {
+          if (yes) { luaLock_.lock(); } else { luaLock_.unlock(); }
+      }
+       
       static void InsertEvent( const std::function< void(void) >& cb )
       {
          instance().m_eventQueue.InsertEvent( cb );
@@ -56,7 +92,9 @@ namespace NylonSysCore
           
           while( !app.m_exit )
           {
+              app.luaLock_.unlock();
               app.m_eventQueue.Wait();
+              app.luaLock_.lock();
               app.m_eventQueue.Process();
           }
       }
@@ -74,8 +112,10 @@ namespace NylonSysCore
       {
           Application& app = instance();
 
+          app.luaLock_.unlock();
           app.m_eventQueue.Wait();
 
+          app.luaLock_.lock();
           app.m_eventQueue.Process();
       }
 
@@ -83,7 +123,9 @@ namespace NylonSysCore
       {
           Application& app = instance();
 
+          app.luaLock_.unlock();
           auto rc = app.m_eventQueue.WaitNylonSysCoreOrSystem();
+          app.luaLock_.lock();
 
           switch( rc )
           {
@@ -114,6 +156,7 @@ namespace NylonSysCore
       Application()
       : m_exit(false)
       {
+          luaLock_.lock();
       }
    
       class ApplicationEventQueue : public SysportEventQueueBase
@@ -183,13 +226,16 @@ namespace NylonSysCore
       bool m_exit;
    }; // end class Application
 
+   recursive_mutex Application::luaLock_;
    void
    Application::MainLoopWithSyseventCallback( const std::function<void(void)>& cbSysevent    )
    {
       Application& app = instance();
       while( !app.m_exit )
       {
+         app.luaLock_.unlock();
          auto rc = app.m_eventQueue.WaitNylonSysCoreOrSystem();
+         app.luaLock_.lock();
          // std::cout << "WaitOrMessage=" << rc << std::endl;
          switch( rc )
          {

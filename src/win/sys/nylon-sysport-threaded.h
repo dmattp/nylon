@@ -194,7 +194,8 @@ private:
    void preReport()
     {
 //      std::cout << "signalling thread is done, ready to return values" << std::endl;
-      WaitForSingleObject( allThreadsReportlock_, INFINITE );
+//      WaitForSingleObject( allThreadsReportlock_, INFINITE );
+      NylonSysCore::Application::Lock(true);
 
       if( glThreadCount != 0 )
       {
@@ -204,41 +205,42 @@ private:
       ++glThreadCount;
 
       // signal ready
-      NylonSysCore::Application::InsertEvent
-      (  std::bind( &ThreadRunner::whenLuaIsReadyToReadValues, this )
-      );
+//       NylonSysCore::Application::InsertEvent
+//       (  std::bind( &ThreadRunner::whenLuaIsReadyToReadValues, this )
+//       );
 
       // lock
       //std::cout << "waiting for main thread to come and read" << std::endl;
-      auto rc = WaitForSingleObject( waitForReader_, INFINITE );
-      if (rc != WAIT_OBJECT_0)
-      {
-          hardfail( "ERROR02a: waitForReader_ failed, rc=", rc );
-      }
+//       auto rc = WaitForSingleObject( waitForReader_, INFINITE );
+//       if (rc != WAIT_OBJECT_0)
+//       {
+//           hardfail( "ERROR02a: waitForReader_ failed, rc=", rc );
+//       }
 
-      if (!gl_MainThreadWaitingForValues)
-      {
-          hardfail("ERROR01a: main thread not waiting for values!!");
-      }
+//       if (!gl_MainThreadWaitingForValues)
+//       {
+//           hardfail("ERROR01a: main thread not waiting for values!!");
+//       }
       
       // NylonSysCore blocked; now safe to operate on lua.
    }
 
    void postReport()
    {
-       if( glThreadCount != 1 )
-           hardfail("ERROR: glThreadCount not 1=", glThreadCount);
+        if( glThreadCount != 1 )
+            hardfail("ERROR: glThreadCount not 1=", glThreadCount);
 
-       --glThreadCount;
+        --glThreadCount;
        
-      if (!gl_MainThreadWaitingForValues)
-          hardfail("ERROR01b: main thread not waiting for values!!");
+//       if (!gl_MainThreadWaitingForValues)
+//           hardfail("ERROR01b: main thread not waiting for values!!");
       
-      // Now unblock NylonSysCore
-      ReleaseSemaphore( waitForValues_, 1, 0 );
+//       // Now unblock NylonSysCore
+//       ReleaseSemaphore( waitForValues_, 1, 0 );
 
-      // and allow other threads to report
-      ReleaseMutex( allThreadsReportlock_ );
+//       // and allow other threads to report
+//       ReleaseMutex( allThreadsReportlock_ );
+       NylonSysCore::Application::Lock(false);
 
       // std::cout << "done returning values, now unblocking main thread" << std::endl;
    }
