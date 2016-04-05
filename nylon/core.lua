@@ -488,6 +488,11 @@ local function mbox_find( mailboxes, boxname )
    end
 end
 
+local function mbox_havemsg( self, box )
+   return #box.q > 0
+end
+
+
 -- Wait on a message from one specific mailbox
 local function mbox_getmsg( self, box, timeout )
    while #box.q < 1 do
@@ -930,10 +935,10 @@ function cord:sleep_manual( setWakeUp, ... )
    -- @todo: not sure what should be the return args here
    -- ie the values returned by the call to coroutine.yield
    repeat 
-      wv.log( 'trace,core,pre', "[%s] Nylony::sleep_until manual wakeup; yielding.", self.name )
+      -- wv.log( 'trace,core,pre', "[%s] Nylony::sleep_until manual wakeup; yielding.", self.name )
       -- self:_yield()
       self:yield_to_sleep()
-      if wv.log_active('trace,core,post') then
+      if false then -- wv.log_active('trace,core,post') then
          wv.log('trace,core,post', "[%s] Nylony::sleep_until resumed; expired=%s \n%s", 
                 self.name, bool2yesno(expired), dump_costatus() )
       end

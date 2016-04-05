@@ -7,6 +7,35 @@
 
 namespace NylonSysCore {
 
+    // windows vs2010 doesn't have std::recursive_mutex?
+    class recursive_mutex
+    {
+    public:
+        recursive_mutex()
+        {
+            InitializeCriticalSection(&m_cs);
+        }
+        ~recursive_mutex()
+        {
+            DeleteCriticalSection(&m_cs);
+        }
+        void lock()
+        {
+            EnterCriticalSection(&m_cs);
+        }
+        void unlock()
+        {
+            LeaveCriticalSection(&m_cs);
+        }
+        bool try_lock()
+        {
+            return !!TryEnterCriticalSection(&m_cs);
+        }
+    private:
+        CRITICAL_SECTION m_cs;
+        recursive_mutex( const recursive_mutex& ); // not implemented; private to prevent copying.
+    };
+
     class SysportEventQueueBase
     {
     protected:
