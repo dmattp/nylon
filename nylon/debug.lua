@@ -4,6 +4,10 @@ local Debug = {}
 
 local config = nil
 
+require 'nylon.syscore'
+local tbase=os.time()
+local tbasetick = NylonSysCore.uptime()
+
 local function openOutFile( name )
    config.outfile = io.open( name, 'w' )
    if not config.outfile then
@@ -18,7 +22,11 @@ local pluggable_log_io = function( groups, text )
       end
       openOutFile( config.filename )
    end
-   config.outfile:write( string.format("%4.3f ", NylonSysCore.uptime()) )
+   local tnow = (NylonSysCore.uptime() - tbasetick + tbase)
+   local tnowfrac = math.fmod( tnow, 60)
+   local dt = os.date( '*t', tnow )
+   config.outfile:write( os.date("%m%d %H:%M:", tnow) )
+   config.outfile:write( string.format("%5.3f ", tnowfrac ) )
    config.outfile:write( string.format("{%s} ", groups) )
    config.outfile:write( text )
    config.outfile:write( '\n' )
