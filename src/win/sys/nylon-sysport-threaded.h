@@ -56,7 +56,8 @@ public:
    )
    : fun_( fun ),
      o_( new luabind::object(o) ),
-     exiter_( 0 )
+     exiter_( 0 ),
+     hadException( false )
    {
        initMainMutex();
    }
@@ -68,7 +69,8 @@ public:
    )
    : fun_( fun ),
      o_( new luabind::object(o) ),
-     exiter_( new luabind::object( exiter ) )
+     exiter_( new luabind::object( exiter ) ),
+     hadException( false )
    {
        initMainMutex();
    }
@@ -113,12 +115,34 @@ public:
                                        
        if( exiter_ )
        {
-           (*exiter_)();
+           if (!hadException)
+           {
+               (*exiter_)();
+           }
+           else
+           {
+               (*exiter_)( eWhat_ );
+           }
        }
 
-//      pthread_join( thread_, &rc );
+       if (!hadException)
+       {
+           delete this;
+       }
+       else
+       {
+           lua_State* L = o_->interpreter();
+           const std::string eWhat = eWhat_;
 
-      delete this;
+           std::cerr << "runInNewThread/whenThreadHasExited FATAL: " << eWhat << std::endl; 
+           delete this;  // Careful! don't use members after this
+
+#if 0           
+           lua_pushlstring( L, eWhat.c_str(), eWhat.length() );
+           lua_error(L);
+#endif 
+       }
+
    }
 
    void runInNewThread()
@@ -127,7 +151,16 @@ public:
 
       ThreadReporter reporter( *this, *o_ );
 
-      fun_( reporter );
+      try
+      {
+          fun_( reporter );
+      }
+      catch( const std::exception& e )
+      {
+          hadException = true;
+          std::cerr << "runInNewThread FATAL: " << e.what() << std::endl;
+          eWhat_ = e.what();
+      }
 
 //      std::cout << "EXIT ThreadRunner::runInNewThread()" << std::endl;
 
@@ -187,6 +220,9 @@ private:
    std::function<void(ThreadReporter)> fun_;
    luabind::object* o_;
    luabind::object* exiter_;
+    bool hadException;
+    std::string eWhat_;
+    
 
     static int glThreadCount;
     static bool gl_MainThreadWaitingForValues;

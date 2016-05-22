@@ -46,7 +46,10 @@ local function metacow( orig_table, new_tbl )
    return new_tbl
 end
 
-local wv = require 'nylon.debug'{ name = 'nylon-core' }
+local wv = require 'nylon.debug'{ name =
+                                 --     'nylon-core'
+                                 string.format('nylon-core-%d',os.time())
+                            }
 
 
 -- extern reschedule is the program environment rescheduling function,
@@ -1083,9 +1086,14 @@ end
 function cord:cthreaded( cfun )
    local done
    local vals
+   local got_error
 
-   local function onDone()
+   local function onDone(err)
       --print('ondone, done=',done)
+      if err then
+         wv.log('error','cthreaded thread error=%s', err)
+         got_error = err
+      end
       if not done then
          done = true
          waitlist_insert( self )
@@ -1107,6 +1115,9 @@ function cord:cthreaded( cfun )
    while not done do
       if localdbg then wv.log('debug','sleeping, wait 4 run_c_threaded_with_exit') end
       self:yield_to_sleep()
+   end
+   if got_error then
+      error( got_error )
    end
    if type(vals) == 'table' then
       return table.unpack( vals )
