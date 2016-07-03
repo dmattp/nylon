@@ -5,17 +5,27 @@ local Debug = {}
 local config = nil
 
 require 'nylon.syscore'
-local tbase=os.time()
+
+local Nylon = {} -- require 'nylon.core'()
+
+local tbase = os.time() or 0 -- it's crazy, but if you have a system for whatever reason set to a really old date (probably pre-1970), os.time() returns nil.
 local tbasetick = NylonSysCore.uptime()
 
 local function openOutFile( name )
+   if config.outfile then
+      config.outfile:close()
+   end
    config.outfile = io.open( name, 'w' )
    if not config.outfile then
       config.outfile = io.stdout
    end
 end
 
+--local logmsgndx = 2
+
 local pluggable_log_io = function( groups, text )
+--   logmsgndx = logmsgndx + 1
+   
    if not config.outfile then
       if not config.filename then
          config.filename = string.format('%s/%s.log', config.dir, config.name )
@@ -24,9 +34,20 @@ local pluggable_log_io = function( groups, text )
    end
    local tnow = (NylonSysCore.uptime() - tbasetick + tbase)
    local tnowfrac = math.fmod( tnow, 60)
-   local dt = os.date( '*t', tnow )
+
+--   local dt = os.date( '*t', tnow )
    config.outfile:write( os.date("%m%d %H:%M:", tnow) )
-   config.outfile:write( string.format("%5.3f ", tnowfrac ) )
+   config.outfile:write( string.format("%05.3f ", tnowfrac ) )
+
+   local cord = Nylon.self
+   if cord then
+--      config.outfile:write '<'
+      config.outfile:write( cord.name )
+      config.outfile:write '/ '
+   end
+   
+   -- config.outfile:write( tostring(logmsgndx) )
+   
    config.outfile:write( string.format("{%s} ", groups) )
    config.outfile:write( text )
    config.outfile:write( '\n' )
@@ -41,8 +62,11 @@ local log_disable = {
 function Debug.configure( p )
    -- print( 'Got call to debug.configur, p.name=%s', tostring(p.name) )
    local o = {}
+   if not (p and p.nocordcheck) then
+      Nylon = require 'nylon.core'()
+   end
    local lconfig = {
-      dir = '/tmp',
+      dir = (os.getenv 'nylonloghome') or '/tmp',
       name = 'nylon'
    }
    config = lconfig
@@ -91,6 +115,11 @@ function Debug.log( grps, fmt, ... )
                         string.format( '%s\n\t%s\n%s', err, (fmt or '[[NULL-FMT-STRING]]'), Debug.backtrace() ) )
    end
 end
+
+function Debug.submodule( self, modname )
+   local logif = {}
+end
+
 
 
 Debug.setpluggable = {

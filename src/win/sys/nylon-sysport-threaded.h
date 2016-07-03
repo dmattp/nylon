@@ -105,13 +105,13 @@ public:
 
    void whenThreadHasExited()
    {
-//      void* rc;
        // ULONG tbeg = GetTickCount();
        WaitForSingleObject( thread_, INFINITE ); // MS equivalent of pthread_join
-
        //ULONG tend  = GetTickCount();
 
        // std::cout << "whenThreadHasExited tick elapsed=" << (tend-tbeg) << std::endl;
+
+       CloseHandle( thread_ );
                                        
        if( exiter_ )
        {

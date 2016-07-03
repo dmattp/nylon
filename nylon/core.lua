@@ -46,10 +46,8 @@ local function metacow( orig_table, new_tbl )
    return new_tbl
 end
 
-local wv = require 'nylon.debug'{ name =
-                                 --     'nylon-core'
-                                 string.format('nylon-core-%d',os.time())
-                            }
+local wv = require 'nylon.debug'{  name = string.format('nylon-core-%d',os.time() % 999),
+                               nocordcheck = true }
 
 
 -- extern reschedule is the program environment rescheduling function,
@@ -364,6 +362,7 @@ end
 local function nylon_schedule()
 
    local function run_current_tasklist( currlist )
+      -- wv.log('extra','run_current_tasklist #currlist=%d', #currlist)
       for _, curr in ipairs( currlist ) do
          -- wv.log('extra','reschedule_tasks() task=%s co=%s', curr.name, tostring(curr.co) )
          if curr.dead then
@@ -374,21 +373,21 @@ local function nylon_schedule()
             if curr.req_pause then
                clist_insert( threads, 'paused', head )
             else
-               --            wv.log('extra','RESUMING task=%s co=%s', curr.name, tostring(curr.co) )
+               -- wv.log('extra','RESUMING task=%s co=%s', curr.name, tostring(curr.co) )
                local rc, err = curr:resume()
                if not rc then
                   wv.log( 'error', 'Error in thread "%s"; err=%s',
                          curr.name, (err or 'none') )
                   curr.status = err
                else
-                  -- wv.log( 'extra', 'thread "%s" returned OK', curr.name )
+--                  wv.log( 'extra', 'thread "%s" returned OK', curr.name )
                end
             end
          end
       end
    end
 
-   -- wv.log('extra','nylon_schedule() waitlist=%s co=%s', type(waitlist), tostring(coroutine.running()) )
+--    wv.log('extra','nylon_schedule() waitlist=%s co=%s', type(waitlist), tostring(coroutine.running()) )
    if waitlist then
       local currlist = waitlist
       waitlist = nil
@@ -973,17 +972,17 @@ end
 
 -- put the cord to sleep for so many seconds.
 function cord:sleep( secs )
---   wv.log('core,prime', "In lcore wait, %f secs", secs )
+--   wv.log('core,prime', "[%s] In lcore wait, %f secs", self.name, secs )
    if nil == secs then -- nothing to do
       return self:yield_to_sleep()
    end
    local expired = false
 
    nylon_in_main_state( function()
-      -- wv.log('extra','in main state; adding one-shot timer for %fs', secs)                         
+--      wv.log('extra','[%s] in main state; adding one-shot timer for %fs', self.name, secs)
       NylonSysCore.addOneShot( secs*1000, 
          function() 
-            -- wv.log( 'debug', 'got one-shot timer callback' )
+--            wv.log( 'debug', '[%s] got one-shot timer callback', self.name )
             expired = true
             waitlist_insert( self )
             extern_reschedule()
@@ -1121,8 +1120,8 @@ function cord:cthreaded( cfun )
    end
    if type(vals) == 'table' then
       return table.unpack( vals )
-   else
-      wv.log('abnorm','no values, type(vals)=%s', type(vals))
+--   else
+      -- wv.log('abnorm','no values, type(vals)=%s', type(vals))
    end
 end
 
@@ -1247,9 +1246,12 @@ local exports = {
              run  = function()
                 extern_reschedule = function() NylonSysCore.reschedule_empty() end
                 while keepRunning do
+--                   wv.log 'RUN: syscore wait'
                    NylonSysCore.processAndWait()
+--                   wv.log 'RUN: scheduling'
                    nylon_schedule()
                 end
+--                wv.log( 'norm', 'nylon.run() returned, keepRunning=%s', keepRunning )
              end,
              halt = function()
                 keepRunning = false

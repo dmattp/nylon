@@ -7,6 +7,7 @@
 
 namespace NylonSysCore {
 
+
     // windows vs2010 doesn't have std::recursive_mutex?
     class recursive_mutex
     {
@@ -38,8 +39,14 @@ namespace NylonSysCore {
 
     class SysportEventQueueBase
     {
+    private:
+        /* this should normally always be 'infinite', but in the case where the loop seems unresponsive,
+         * this can be a good diagnistic to test whether nylon is not waking up for events */
+        unsigned long sEventTimeout;
+        
     protected:
         SysportEventQueueBase()
+        : sEventTimeout( INFINITE )
         {
             hEventsAvailable =
                 CreateEvent
@@ -54,7 +61,9 @@ namespace NylonSysCore {
         }
         void waitonevent()
         {
-            WaitForSingleObject( hEventsAvailable, INFINITE );
+//            WaitForSingleObject( hEventsAvailable, INFINITE );
+            // dmp160602 - not loving your ZMQ
+            WaitForSingleObject( hEventsAvailable, sEventTimeout );
         }
 
         // return true if nylon event rcvd, false otherwise
@@ -66,7 +75,7 @@ namespace NylonSysCore {
             auto rc =
                MsgWaitForMultipleObjects
                ( 1, &hEventsAvailable,
-                  FALSE, INFINITE, QS_ALLINPUT
+                  FALSE, sEventTimeout, QS_ALLINPUT
                );
 
             // std::cout << "MsgWaitForMultipleObjects rc=" << rc << std::endl;
@@ -83,6 +92,13 @@ namespace NylonSysCore {
                   std::cout << "UnK return from MsgWaitForMultipleObjects=" << rc << std::endl;
                   return false;
             }
+        }
+
+    public:
+        void setEventTimeoutMs( unsigned msTimeout )
+        {
+            sEventTimeout = msTimeout;
+            this->wakeup();
         }
     private:
         HANDLE hEventsAvailable;

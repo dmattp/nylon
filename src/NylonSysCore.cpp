@@ -107,6 +107,12 @@ namespace NylonSysCore
                   break;
           }
       }
+
+       static void setEventTimeout( unsigned timeoutMs )
+       {
+          Application& app = instance();
+          app.m_eventQueue.setEventTimeoutMs( timeoutMs );
+       }
        
 
       static void MainLoopWithSyseventCallback( const std::function<void(void)>& cbSysevent );
@@ -169,7 +175,7 @@ namespace NylonSysCore
          {
              return this->waiteventnylonorsystem() ? GOT_NYLON_EVENT : GOT_SYSTEM_EVENT;
          }
-         
+
          bool Process1()
          {
             if( mwsr_cbq_.isEmpty() )
@@ -636,6 +642,7 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
 
       def( "processAndWait", &NylonSysCore::Application::processAndWait ),
       def( "processAndWaitNylonOrSystem", &NylonSysCore::Application::processAndWaitNylonOrSystem ),            
+      def( "setEventTimeout", &NylonSysCore::Application::setEventTimeout ),
       def( "reschedule_empty", &reschedule_empty ),     
 
       def( "sysevtCbLoop", &sysevtCbLoop )
