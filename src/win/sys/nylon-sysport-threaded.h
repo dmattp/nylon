@@ -1,4 +1,6 @@
 #include <process.h>
+#include <stack> // for ThreadPool, may go away
+#include <memory> // for ThreadPool, may go away
 
 // static unsigned __stdcall // static
 //threadEntry( void* arg );
@@ -31,17 +33,147 @@ namespace { // anonymous
     }
 }
 
+class ThreadPool
+{
+public:
+    class Thread
+    {
+        static const int MAX_SEM_COUNT=5; // should never be but 1 or 0
+        ThreadPool& pool_;
+        HANDLE thread_;
+        HANDLE waitForDemand_; // semaphore to block on when idle
+        unsigned threadaddr_; // really don't know what this is that's different
+                              // from HANDLE; MS docs suggest its the 'thread id'??
+        ThreadRunner* pActiveRunner_;
+
+        void inMainThreadAddMeToPool()
+        {
+            std::cout << "Thread=" << (void*)this << " inMainThreadAddMeToPool()\n";
+            pool_.insert( this );
+        }
+
+        ~Thread()
+        {
+            CloseHandle(waitForDemand_);
+
+            // this is how to wait for thread exit, but we're not really doing this
+            // right now.
+            // WaitForSingleObject( thread_, INFINITE ); // MS equivalent of pthread_join
+        }
+
+        void loopForThreadInThreadPool()
+        {
+            while (true)
+            {
+                std::cout << "Thread=" << (void*)this << " waiting for demand\n";
+                auto rc = WaitForSingleObject( waitForDemand_, INFINITE ); // wait for thread to finish returning values
+
+                std::cout << "Thread=" << (void*)this << " now demanded; running\n";
+
+                this->whenActivated();
+            }
+        }
+
+        static unsigned __stdcall // static
+        threadEntry( void* arg )
+        {
+            Thread* this1 = static_cast<Thread*>( arg );
+            this1->loopForThreadInThreadPool();
+            return 0;
+        }
+
+        void whenActivated(); // first called in thread
+        void whenThreadHasCompletedDoThisInMainThread(); // main thread callback after completing task
+        
+
+    public:
+        Thread(ThreadPool& pool )
+        : pool_( pool ), // so he can know to return himself to the pool
+          threadaddr_(0),
+          pActiveRunner_(0)
+        {
+            waitForDemand_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
+
+            this->inMainThreadAddMeToPool();
+            
+            thread_ = (HANDLE)
+            _beginthreadex
+            (   0, // void *security,
+                0, // unsigned stack_size,
+                &threadEntry, // unsigned ( __stdcall *start_address )( void * ),
+                this, // void *arglist,
+                0, // unsigned initflag, 0 == creates running (rather than suspended)
+                &threadaddr_ // unsigned *thrdaddr 
+            );
+        }
+
+        void kickoff( ThreadRunner& runner )
+        {
+            this->pActiveRunner_ = &runner; // this is safe since thread is idle
+            ReleaseSemaphore( waitForDemand_, 1, 0 );  // allow thread to return values
+        }
+    }; // end, class Thread
+    
+private:
+    static const int kNumThreads = 5;
+    
+    HANDLE waitForThread_; // semaphore to block on when idle
+    
+    std::stack< Thread* > pool_;
+
+    static const int MAX_SEM_COUNT=5;
+    
+
+    void insert( Thread* thread )
+    {
+        pool_.push( thread );
+        ReleaseSemaphore( waitForThread_, 1, 0 );  // allow thread to return values
+    }
+
+    ThreadPool()
+    {
+        waitForThread_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
+        /* create 20 threads */
+//         for (int i = 0; i < kNumThreads; ++i)
+//         {
+//             new Thread(*this);
+//         }
+    }
+
+public:
+    Thread* get()
+    {
+        // should do something like, if pool empty then create a thread
+        if (pool_.empty())
+        {
+            std::cout << "thread pool empty, make a new one" << std::endl;
+            new Thread(*this);
+            auto rc = WaitForSingleObject( waitForThread_, INFINITE ); // wait for thread to finish returning values
+            std::cout << "got new thread, empty? = " << pool_.empty() << std::endl;
+        }
+        
+        Thread* thread = pool_.top();
+        
+        pool_.pop();
+        
+        return thread;
+    }
+    
+    static ThreadPool& instance()
+    {
+        static ThreadPool singleton_;
+        return singleton_; // thank you C++11
+    }
+};
+
+
+//volatile ThreadPoool& ii9944x = ThreadPool::instance();
 
 
 class ThreadRunner
 {
     static const int MAX_SEM_COUNT=5;
    friend class ThreadReporter;
-   void initMutexes()
-   {
-//        if (!waitForValues_)
-//            hardfail("ERROR03a did not init mutexes!!");
-   }
     void initMainMutex()
     {
         waitForValues_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
@@ -105,14 +237,6 @@ public:
 
    void whenThreadHasExited()
    {
-       // ULONG tbeg = GetTickCount();
-       WaitForSingleObject( thread_, INFINITE ); // MS equivalent of pthread_join
-       //ULONG tend  = GetTickCount();
-
-       // std::cout << "whenThreadHasExited tick elapsed=" << (tend-tbeg) << std::endl;
-
-       CloseHandle( thread_ );
-                                       
        if( exiter_ )
        {
            if (!hadException)
@@ -137,7 +261,7 @@ public:
            std::cerr << "runInNewThread/whenThreadHasExited FATAL: " << eWhat << std::endl; 
            delete this;  // Careful! don't use members after this
 
-#if 0           
+#if 0 // huh, I wonder why I abandoned this?  I guess errors are reported via the 'exiter' function now.
            lua_pushlstring( L, eWhat.c_str(), eWhat.length() );
            lua_error(L);
 #endif 
@@ -145,10 +269,9 @@ public:
 
    }
 
+   // this should be the first think called from the new thread
    void runInNewThread()
    {
-//      std::cout << "ENTER ThreadRunner::runInNewThread()" << std::endl;
-
       ThreadReporter reporter( *this, *o_ );
 
       try
@@ -161,46 +284,17 @@ public:
           std::cerr << "runInNewThread FATAL: " << e.what() << std::endl;
           eWhat_ = e.what();
       }
-
-//      std::cout << "EXIT ThreadRunner::runInNewThread()" << std::endl;
-
-      NylonSysCore::Application::InsertEvent
-      (  std::bind( &ThreadRunner::whenThreadHasExited, this )
-      );
    }
 
-    static unsigned __stdcall // static
-    threadEntry( void* arg )
-    {
-//        std::cout << "ThreadRunner::threadEntry()" << std::endl;
-        ThreadRunner* this1 = static_cast<ThreadRunner*>( arg );
-        this1->initMutexes();
-        this1->runInNewThread();
-        return 0;
-    }
-      
+
+   // this will be called by the main thread to 'kick off' execution of the
+   // new thread
    void run()
    {
-//      std::cout << "ThreadRunner::run()" << std::endl;
-
-// uintptr_t _beginthreadex( // NATIVE CODE
-//    void *security,
-//    unsigned stack_size,
-//    unsigned ( __stdcall *start_address )( void * ),
-//    void *arglist,
-//    unsigned initflag,
-//    unsigned *thrdaddr 
-// );
-
-      thread_ = (HANDLE)
-          _beginthreadex
-          (   0, // void *security,
-              0, // unsigned stack_size,
-              &threadEntry, // unsigned ( __stdcall *start_address )( void * ),
-              this, // void *arglist,
-              0, // unsigned initflag, 0 == creates running (rather than suspended)
-              &threadaddr_ // unsigned *thrdaddr 
-          );
+       // need to get a thread from the thread pool, and send him an init message
+       // with the 'this' pointer
+       ThreadPool::Thread* t = ThreadPool::instance().get();
+       t->kickoff( *this );
    }
 
     static void Init()
@@ -209,9 +303,6 @@ public:
     }
     
 private:
-   HANDLE thread_;
-    unsigned threadaddr_; // really don't know what this is that's different
-                          // from HANDLE; MS docs suggest its the 'thread id'??
    static HANDLE allThreadsReportlock_;
    HANDLE waitForReader_;
    HANDLE waitForValues_;
@@ -239,24 +330,6 @@ private:
       }
 
       ++glThreadCount;
-
-      // signal ready
-//       NylonSysCore::Application::InsertEvent
-//       (  std::bind( &ThreadRunner::whenLuaIsReadyToReadValues, this )
-//       );
-
-      // lock
-      //std::cout << "waiting for main thread to come and read" << std::endl;
-//       auto rc = WaitForSingleObject( waitForReader_, INFINITE );
-//       if (rc != WAIT_OBJECT_0)
-//       {
-//           hardfail( "ERROR02a: waitForReader_ failed, rc=", rc );
-//       }
-
-//       if (!gl_MainThreadWaitingForValues)
-//       {
-//           hardfail("ERROR01a: main thread not waiting for values!!");
-//       }
       
       // NylonSysCore blocked; now safe to operate on lua.
    }
@@ -268,19 +341,28 @@ private:
 
         --glThreadCount;
        
-//       if (!gl_MainThreadWaitingForValues)
-//           hardfail("ERROR01b: main thread not waiting for values!!");
-      
-//       // Now unblock NylonSysCore
-//       ReleaseSemaphore( waitForValues_, 1, 0 );
-
-//       // and allow other threads to report
-//       ReleaseMutex( allThreadsReportlock_ );
        NylonSysCore::Application::Lock(false);
 
       // std::cout << "done returning values, now unblocking main thread" << std::endl;
    }
 }; // end, ThreadRunner
+
+
+void ThreadPool::Thread::whenActivated()
+{
+    pActiveRunner_->runInNewThread();
+            
+    NylonSysCore::Application::InsertEvent
+    (  std::bind( &Thread::whenThreadHasCompletedDoThisInMainThread, this )
+    );
+}
+
+void ThreadPool::Thread::whenThreadHasCompletedDoThisInMainThread()
+{
+    pActiveRunner_->whenThreadHasExited();
+    pActiveRunner_ = 0;
+    this->inMainThreadAddMeToPool();
+}
 
 
 int ThreadRunner::glThreadCount = 0;
