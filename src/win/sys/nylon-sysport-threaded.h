@@ -48,7 +48,7 @@ public:
 
         void inMainThreadAddMeToPool()
         {
-            std::cout << "Thread=" << (void*)this << " inMainThreadAddMeToPool()\n";
+//            std::cout << "Thread=" << (void*)this << " inMainThreadAddMeToPool()\n";
             pool_.insert( this );
         }
 
@@ -65,11 +65,9 @@ public:
         {
             while (true)
             {
-                std::cout << "Thread=" << (void*)this << " waiting for demand\n";
+//                std::cout << "Thread=" << (void*)this << " waiting for demand\n";
                 auto rc = WaitForSingleObject( waitForDemand_, INFINITE ); // wait for thread to finish returning values
-
-                std::cout << "Thread=" << (void*)this << " now demanded; running\n";
-
+//                std::cout << "Thread=" << (void*)this << " now demanded; running\n";
                 this->whenActivated();
             }
         }
@@ -115,15 +113,10 @@ public:
     }; // end, class Thread
     
 private:
-    static const int kNumThreads = 5;
-    
     HANDLE waitForThread_; // semaphore to block on when idle
-    
     std::stack< Thread* > pool_;
-
     static const int MAX_SEM_COUNT=5;
     
-
     void insert( Thread* thread )
     {
         pool_.push( thread );
@@ -133,11 +126,6 @@ private:
     ThreadPool()
     {
         waitForThread_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
-        /* create 20 threads */
-//         for (int i = 0; i < kNumThreads; ++i)
-//         {
-//             new Thread(*this);
-//         }
     }
 
 public:
@@ -146,10 +134,10 @@ public:
         // should do something like, if pool empty then create a thread
         if (pool_.empty())
         {
-            std::cout << "thread pool empty, make a new one" << std::endl;
+//            std::cout << "thread pool empty, make a new one" << std::endl;
             new Thread(*this);
             auto rc = WaitForSingleObject( waitForThread_, INFINITE ); // wait for thread to finish returning values
-            std::cout << "got new thread, empty? = " << pool_.empty() << std::endl;
+//            std::cout << "got new thread, empty? = " << pool_.empty() << std::endl;
         }
         
         Thread* thread = pool_.top();
@@ -174,13 +162,13 @@ class ThreadRunner
 {
     static const int MAX_SEM_COUNT=5;
    friend class ThreadReporter;
-    void initMainMutex()
-    {
-        waitForValues_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
-        waitForReader_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
-        if (!waitForReader_ || !waitForValues_)
-            hardfail("ERROR03b did not init mutexes!!");
-    }
+//     void initMainMutex()
+//     {
+// //         waitForValues_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
+// //         waitForReader_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
+// //         if (!waitForReader_ || !waitForValues_)
+// //             hardfail("ERROR03b did not init mutexes!!");
+//     }
 public:
    ThreadRunner
    (  const std::function<void(ThreadReporter)>& fun,
@@ -191,7 +179,7 @@ public:
      exiter_( 0 ),
      hadException( false )
    {
-       initMainMutex();
+////       initMainMutex();
    }
 
    ThreadRunner
@@ -204,36 +192,36 @@ public:
      exiter_( new luabind::object( exiter ) ),
      hadException( false )
    {
-       initMainMutex();
+//       initMainMutex();
    }
    
    ~ThreadRunner()
    {
       delete o_;
       delete exiter_;
-      CloseHandle(waitForReader_);
-      CloseHandle(waitForValues_);
+//       CloseHandle(waitForReader_);
+//       CloseHandle(waitForValues_);
    }
 
-   void whenLuaIsReadyToReadValues()
-   {
-       //std::cout << "main thread now ready to read values" << std::endl;
+//    void whenLuaIsReadyToReadValues()
+//    {
+//        //std::cout << "main thread now ready to read values" << std::endl;
 
-      gl_MainThreadWaitingForValues = true; 
-      ReleaseSemaphore( waitForReader_, 1, 0 );  // allow thread to return values
+//       gl_MainThreadWaitingForValues = true; 
+//       ReleaseSemaphore( waitForReader_, 1, 0 );  // allow thread to return values
 
-//      std::cout << "main thread now waiting for values" << std::endl;
+// //      std::cout << "main thread now waiting for values" << std::endl;
       
-      auto rc = WaitForSingleObject( waitForValues_, INFINITE ); // wait for thread to finish returning values
-      gl_MainThreadWaitingForValues = false;
+//       auto rc = WaitForSingleObject( waitForValues_, INFINITE ); // wait for thread to finish returning values
+//       gl_MainThreadWaitingForValues = false;
 
-      if (rc != WAIT_OBJECT_0)
-      {
-          hardfail( "ERROR02b: waitForValues_ failed, rc=", rc );
-      }
+//       if (rc != WAIT_OBJECT_0)
+//       {
+//           hardfail( "ERROR02b: waitForValues_ failed, rc=", rc );
+//       }
 
-      //std::cout << "main thread now released, values should have been returned" << std::endl;
-   }
+//       //std::cout << "main thread now released, values should have been returned" << std::endl;
+//    }
 
    void whenThreadHasExited()
    {
@@ -304,9 +292,9 @@ public:
     
 private:
    static HANDLE allThreadsReportlock_;
-   HANDLE waitForReader_;
-   HANDLE waitForValues_;
-   HANDLE waitForRendezvous_;    
+//    HANDLE waitForReader_;
+//    HANDLE waitForValues_;
+//    HANDLE waitForRendezvous_;    
 
    std::function<void(ThreadReporter)> fun_;
    luabind::object* o_;
