@@ -66,7 +66,7 @@ function Debug.configure( p )
       Nylon = require 'nylon.core'()
    end
    local lconfig = {
-      dir = (os.getenv 'nylonloghome') or '/tmp',
+      dir = (os.getenv 'nylonloghome') or (os.getenv 'TEMP') or '/tmp',
       name = 'nylon'
    }
    config = lconfig

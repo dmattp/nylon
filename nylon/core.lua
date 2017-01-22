@@ -926,7 +926,7 @@ function cord:sleep_manual( setWakeUp, ... )
    local function wkfun(val)
       expired = true
       rc = val
-      wv.log( 'trace,core,pre', "wkfun [%s] co=%s", self.name, tostring(coroutine.running()) )
+--      wv.log( 'trace,core,pre', "wkfun [%s] co=%s", self.name, tostring(coroutine.running()) )
       NylonSysCore.addCallback( function()
                                    waitlist_insert( self )
                                    extern_reschedule()

@@ -2,6 +2,7 @@
 #define WIN_NYLON_SYSPORT_EVENTQ_H__
 
 #include "stdafx.h"
+#include "atomic.h"
 #include <Windows.h>
 
 
@@ -43,10 +44,14 @@ namespace NylonSysCore {
         /* this should normally always be 'infinite', but in the case where the loop seems unresponsive,
          * this can be a good diagnistic to test whether nylon is not waking up for events */
         unsigned long sEventTimeout;
+        volatile int hasEvents; // 170117 trying this as profiling showed a lot of calls to wait on hEventsAvailable;
+                                // this is conceivably more costly than checking a local flag before calling WaitForSingleObject,
+                                // so in instances of high event occurrence we might avoid this overhead.
         
     protected:
         SysportEventQueueBase()
-        : sEventTimeout( INFINITE )
+        : sEventTimeout( INFINITE ),
+          hasEvents(0)
         {
             hEventsAvailable =
                 CreateEvent
@@ -55,18 +60,32 @@ namespace NylonSysCore {
                     nullptr
                 );
         }
+        
         void wakeup()
         {
-            SetEvent( hEventsAvailable );
+            unsigned long hadEvent = Atomic::cmpxchg( hasEvents, 0, 1 );
+            
+            if (!hadEvent)
+            {
+                SetEvent( hEventsAvailable );
+            }
         }
+        
         void waitonevent()
         {
 //            WaitForSingleObject( hEventsAvailable, INFINITE );
             // dmp160602 - not loving your ZMQ
-            WaitForSingleObject( hEventsAvailable, sEventTimeout );
+            unsigned long hadEvent = Atomic::cmpxchg( hasEvents, 1, 0 );
+
+            while (!hadEvent)
+            {
+                WaitForSingleObject( hEventsAvailable, sEventTimeout );
+                
+                hadEvent = Atomic::cmpxchg( hasEvents, 1, 0 );
+            }
         }
 
-        // return true if nylon event rcvd, false otherwise
+        // return true if nylon event rcvd, false otherwise (system event?)
         bool waiteventnylonorsystem()
         {
              // see e.g.,
