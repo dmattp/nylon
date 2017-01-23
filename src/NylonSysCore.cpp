@@ -431,8 +431,8 @@ private:
 // to be technically correct, there must be a class static lock before
 // operating on the lua state to prevent multiple ThreadRunners from
 // trying to access the lua state simultaneously.
-decltype(ThreadRunner::allThreadsReportlock_) ThreadRunner::allThreadsReportlock_
 #ifndef _WINDOWS
+decltype(ThreadRunner::allThreadsReportlock_) ThreadRunner::allThreadsReportlock_
   = PTHREAD_MUTEX_INITIALIZER;
 #endif
 ;

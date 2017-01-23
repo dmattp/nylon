@@ -1,9 +1,5 @@
 #include <process.h>
 #include <stack> // for ThreadPool, may go away
-#include <memory> // for ThreadPool, may go away
-
-// static unsigned __stdcall // static
-//threadEntry( void* arg );
 
 /*
  * HACK ALERT!!
@@ -155,191 +151,158 @@ public:
 };
 
 
-//volatile ThreadPoool& ii9944x = ThreadPool::instance();
-
 
 class ThreadRunner
 {
     static const int MAX_SEM_COUNT=5;
-   friend class ThreadReporter;
-//     void initMainMutex()
-//     {
-// //         waitForValues_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
-// //         waitForReader_ = CreateSemaphore( 0, 0, MAX_SEM_COUNT, 0 ); // initialize to locked
-// //         if (!waitForReader_ || !waitForValues_)
-// //             hardfail("ERROR03b did not init mutexes!!");
-//     }
+    friend class ThreadReporter;
+    static int sRunnerCount;
 public:
-   ThreadRunner
-   (  const std::function<void(ThreadReporter)>& fun,
-      const luabind::object& o
-   )
-   : fun_( fun ),
-     o_( new luabind::object(o) ),
-     exiter_( 0 ),
-     hadException( false )
-   {
-////       initMainMutex();
-   }
+    ThreadRunner
+    (  const std::function<void(ThreadReporter)>& fun,
+        const luabind::object& o
+    )
+    : fun_( fun ),
+      o_( new luabind::object(o) ),
+      exiter_( 0 ),
+      hadException( false )
+    {
+//        ++sRunnerCount;
+    }
 
-   ThreadRunner
-   (  const std::function<void(ThreadReporter)>& fun,
-      const luabind::object& o,
-      const luabind::object& exiter
-   )
-   : fun_( fun ),
-     o_( new luabind::object(o) ),
-     exiter_( new luabind::object( exiter ) ),
-     hadException( false )
-   {
-//       initMainMutex();
-   }
+    ThreadRunner
+    (  const std::function<void(ThreadReporter)>& fun,
+        const luabind::object& o,
+        const luabind::object& exiter
+    )
+    : fun_( fun ),
+      o_( new luabind::object(o) ),
+      exiter_( new luabind::object( exiter ) ),
+      hadException( false )
+    {
+//        ++sRunnerCount;
+    }
    
-   ~ThreadRunner()
-   {
-      delete o_;
-      delete exiter_;
-//       CloseHandle(waitForReader_);
-//       CloseHandle(waitForValues_);
-   }
+    ~ThreadRunner()
+    {
+//        --sRunnerCount;
+//        std::cout << "~ThreadRunner, n=" << sRunnerCount << std::endl;
+        delete o_;
+        delete exiter_;
+    }
 
-//    void whenLuaIsReadyToReadValues()
-//    {
-//        //std::cout << "main thread now ready to read values" << std::endl;
+    void whenThreadHasExited()
+    {
+//        std::cout << "ThreadRunner::whenThreadHasExited, n=" << sRunnerCount << std::endl;
+        if( exiter_ )
+        {
+            if (!hadException)
+            {
+                (*exiter_)();
+            }
+            else
+            {
+                (*exiter_)( eWhat_ );
+            }
+        }
 
-//       gl_MainThreadWaitingForValues = true; 
-//       ReleaseSemaphore( waitForReader_, 1, 0 );  // allow thread to return values
+        if (!hadException)
+        {
+            delete this;
+        }
+        else
+        {
+            lua_State* L = o_->interpreter();
+            const std::string eWhat = eWhat_;
 
-// //      std::cout << "main thread now waiting for values" << std::endl;
-      
-//       auto rc = WaitForSingleObject( waitForValues_, INFINITE ); // wait for thread to finish returning values
-//       gl_MainThreadWaitingForValues = false;
-
-//       if (rc != WAIT_OBJECT_0)
-//       {
-//           hardfail( "ERROR02b: waitForValues_ failed, rc=", rc );
-//       }
-
-//       //std::cout << "main thread now released, values should have been returned" << std::endl;
-//    }
-
-   void whenThreadHasExited()
-   {
-       if( exiter_ )
-       {
-           if (!hadException)
-           {
-               (*exiter_)();
-           }
-           else
-           {
-               (*exiter_)( eWhat_ );
-           }
-       }
-
-       if (!hadException)
-       {
-           delete this;
-       }
-       else
-       {
-           lua_State* L = o_->interpreter();
-           const std::string eWhat = eWhat_;
-
-           std::cerr << "runInNewThread/whenThreadHasExited FATAL: " << eWhat << std::endl; 
-           delete this;  // Careful! don't use members after this
+            std::cerr << "runInNewThread/whenThreadHasExited FATAL: " << eWhat << std::endl; 
+            delete this;  // Careful! don't use members after this
 
 #if 0 // huh, I wonder why I abandoned this?  I guess errors are reported via the 'exiter' function now.
-           lua_pushlstring( L, eWhat.c_str(), eWhat.length() );
-           lua_error(L);
+            lua_pushlstring( L, eWhat.c_str(), eWhat.length() );
+            lua_error(L);
 #endif 
-       }
+        }
 
-   }
+    }
 
-   // this should be the first think called from the new thread
-   void runInNewThread()
-   {
-      ThreadReporter reporter( *this, *o_ );
+    // this should be the first think called from the new thread
+    void runInNewThread()
+    {
+        ThreadReporter reporter( *this, *o_ );
 
-      try
-      {
-          fun_( reporter );
-      }
-      catch( const std::exception& e )
-      {
-          hadException = true;
-          std::cerr << "runInNewThread FATAL: " << e.what() << std::endl;
-          eWhat_ = e.what();
-      }
-   }
+        try
+        {
+            fun_( reporter );
+        }
+        catch( const std::exception& e )
+        {
+            hadException = true;
+            std::cerr << "runInNewThread FATAL: " << e.what() << std::endl;
+            eWhat_ = e.what();
+        }
+    }
 
 
-   // this will be called by the main thread to 'kick off' execution of the
-   // new thread
-   void run()
-   {
-       // need to get a thread from the thread pool, and send him an init message
-       // with the 'this' pointer
-       ThreadPool::Thread* t = ThreadPool::instance().get();
-       t->kickoff( *this );
-   }
+    // this will be called by the main thread to 'kick off' execution of the
+    // new thread
+    void run()
+    {
+        // need to get a thread from the thread pool, and send him an init message
+        // with the 'this' pointer
+        ThreadPool::Thread* t = ThreadPool::instance().get();
+        t->kickoff( *this );
+    }
 
     static void Init()
     {
-        allThreadsReportlock_ = CreateMutex(0,0,0);
+//         allThreadsReportlock_ = CreateMutex(0,0,0);
     }
     
 private:
-   static HANDLE allThreadsReportlock_;
-//    HANDLE waitForReader_;
-//    HANDLE waitForValues_;
-//    HANDLE waitForRendezvous_;    
-
-   std::function<void(ThreadReporter)> fun_;
-   luabind::object* o_;
-   luabind::object* exiter_;
+//     static HANDLE allThreadsReportlock_;
+    std::function<void(ThreadReporter)> fun_;
+    luabind::object* o_;
+    luabind::object* exiter_;
     bool hadException;
     std::string eWhat_;
     
-
     static int glThreadCount;
     static bool gl_MainThreadWaitingForValues;
 
-   void preReport()
+    void preReport()
     {
-//      std::cout << "signalling thread is done, ready to return values" << std::endl;
-//      WaitForSingleObject( allThreadsReportlock_, INFINITE );
-      NylonSysCore::Application::Lock(true);
+        NylonSysCore::Application::Lock(true);
 
-      if( glThreadCount != 0 )
-      {
-          hardfail("ERROR: somebody else reporting=",glThreadCount);
-      }
+        if( glThreadCount != 0 )
+        {
+            hardfail("ERROR: somebody else reporting=",glThreadCount);
+        }
 
-      ++glThreadCount;
+        ++glThreadCount;
       
-      // NylonSysCore blocked; now safe to operate on lua.
-   }
+        // NylonSysCore blocked; now safe to operate on lua.
+    }
 
-   void postReport()
-   {
+    void postReport()
+    {
         if( glThreadCount != 1 )
             hardfail("ERROR: glThreadCount not 1=", glThreadCount);
 
         --glThreadCount;
        
-       NylonSysCore::Application::Lock(false);
-
-      // std::cout << "done returning values, now unblocking main thread" << std::endl;
-   }
+        NylonSysCore::Application::Lock(false);
+    }
 }; // end, ThreadRunner
+
+int ThreadRunner::sRunnerCount;
 
 
 void ThreadPool::Thread::whenActivated()
 {
     pActiveRunner_->runInNewThread();
             
+//    std::cout << "ThreadPool::whenActivated, insert completion event to main thread\n";
     NylonSysCore::Application::InsertEvent
     (  std::bind( &Thread::whenThreadHasCompletedDoThisInMainThread, this )
     );
@@ -347,6 +310,7 @@ void ThreadPool::Thread::whenActivated()
 
 void ThreadPool::Thread::whenThreadHasCompletedDoThisInMainThread()
 {
+//    std::cout << "ThreadPool::whenThreadHasCompletedDoThisInMainThread\n";
     pActiveRunner_->whenThreadHasExited();
     pActiveRunner_ = 0;
     this->inMainThreadAddMeToPool();
