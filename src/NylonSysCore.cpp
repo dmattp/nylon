@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <functional>
+#include <mutex>
 #include "sys/platform-defs.h"
 
 
@@ -30,9 +31,9 @@ namespace NylonSysCore
    class Application
    {
    public:
-      static recursive_mutex luaLock_;
+      static std::recursive_mutex luaLock_;
        
-       static void Lock( bool yes )
+      static void Lock( bool yes )
       {
           if (yes) { luaLock_.lock(); } else { luaLock_.unlock(); }
       }

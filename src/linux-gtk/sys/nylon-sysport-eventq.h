@@ -98,6 +98,7 @@ namespace NylonSysCore {
           MySource* this1 = reinterpret_cast<MySource*>( source );
           this1->self->clearPipesAndDispatch();
           this1->mypoll.revents = 0;
+          return true;
        }
        static void gs_finalize (GSource    *source ){ /* Can be NULL */
 //          std::cout << "gs_finalize !!!" << std::endl;
