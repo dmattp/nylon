@@ -1,8 +1,9 @@
 # Create a library called "syscore" which includes the source file "NylonSysCore.cpp".
 # This cmake is rather a mess. 
 
-# I don't recall why I had this, so lets take it out.
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../nylon")
+# This puts the output .so into '../nylon', which is okay for running from source tree,
+# but i really need a proper install, this is a hack.
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/nylon")
 
 ##################################################################
 # MS/Windows Options

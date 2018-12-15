@@ -205,7 +205,7 @@ namespace NylonSysCore
       bool m_exit;
    }; // end class Application
 
-   recursive_mutex Application::luaLock_;
+   std::recursive_mutex Application::luaLock_;
    void
    Application::MainLoopWithSyseventCallback( const std::function<void(void)>& cbSysevent    )
    {
@@ -615,7 +615,10 @@ namespace {
 
 
 
-
+extern "C" void* luabind_deboostified_allocator( void* context, void const* ptr, size_t sz )
+{
+    return realloc(const_cast<void*>(ptr), sz);
+}
 
 
 
@@ -627,7 +630,8 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
 
 #ifdef _WINDOWS
    ThreadRunner::Init();
-#endif 
+#endif
+   luabind::allocator = luabind_deboostified_allocator;
 
    open( lua.state() );
    

@@ -89,6 +89,7 @@ public:
 //      std::cout << "ThreadRunner::threadEntry()" << std::endl;
       ThreadRunner* this1 = static_cast<ThreadRunner*>( arg );
       this1->runInNewThread();
+      return nullptr;
    }
       
    void run()

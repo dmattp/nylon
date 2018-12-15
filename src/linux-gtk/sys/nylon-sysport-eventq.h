@@ -192,6 +192,17 @@ namespace NylonSysCore {
            this->waitonevent();
            return true;
         }
+
+    public:
+        void setEventTimeoutMs( unsigned msTimeout )
+        {
+            // I don't really recall why this was used, I think it was
+            // to debug 'stalls' on windows, where the main loop was not
+            // waking up.  I don't think this has ever been a problem under
+            // linux.  So do nothing here and continue to use infinite sleep
+            // waiting for events.
+        }
+
     private:
        int selfpipes[2];
     }; // class SysportEventQueueBase

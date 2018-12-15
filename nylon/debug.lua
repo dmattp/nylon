@@ -36,7 +36,7 @@ local pluggable_log_io = function( groups, text )
    local tnowfrac = math.fmod( tnow, 60)
 
 --   local dt = os.date( '*t', tnow )
-   config.outfile:write( os.date("%m%d %H:%M:", tnow) )
+   config.outfile:write( os.date("%m%d %H:%M:", math.floor(tnow)) )
    config.outfile:write( string.format("%05.3f ", tnowfrac ) )
 
    local cord = Nylon.self

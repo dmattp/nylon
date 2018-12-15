@@ -11,7 +11,7 @@ for i = 1,maxtest do
    print( (rc==0) and ' ...OK'  or ' ... FAIL !!!' )
    
    if rc ~= 0 then
-      print( string.format('\n\n*** Failure executing test%03d.lua rc=%d,%d ***\n',i,(rc/256),(rc%256)) )
+      print( string.format('\n\n*** Failure executing test%03d.lua rc=%d,%d ***\n',i,math.floor(rc/256),(rc%256)) )
       os.exit(1)
    end
 end
