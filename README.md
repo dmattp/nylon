@@ -10,9 +10,9 @@ Distributed under the MIT license, please see [doc/license.txt] for details.
 
 # Prerequisites
 
-* lua5.2
-* luabind (requires boost)
+* lua5.3
 * cmake
+* luabind-deboostified (included as submodule)
 * glib-2.0 (linux only)
 
 # Motivation
@@ -226,7 +226,3 @@ Nylon's main event loop is integrated with glib on linux which allows Nylon cord
 
 See [doc/installation.txt]
 
-
-# Luabind
-
-From https://github.com/ltjax/luabind-deboostified
