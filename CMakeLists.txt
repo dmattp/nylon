@@ -17,7 +17,6 @@ add_subdirectory (src)
 #add_subdirectory (tests)
 
 # install rule for header files
-#INSTALL(FILES     "${CMAKE_CURRENT_SOURCE_DIR}/include/nlog.h" DESTINATION include)
 #INSTALL(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/nlog" DESTINATION include)
 
 enable_testing()

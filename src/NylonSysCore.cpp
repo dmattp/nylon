@@ -615,10 +615,13 @@ namespace {
 
 
 
-extern "C" void* luabind_deboostified_allocator( void* context, void const* ptr, size_t sz )
-{
-    return realloc(const_cast<void*>(ptr), sz);
-}
+// this was for OpenXRay fork of luabind.  I didn't like it, it seemed broken,
+// despite the large number of forks.
+// extern "C" void* luabind_deboostified_allocator( void* context, void const* ptr, size_t sz )
+// {
+//     return realloc(const_cast<void*>(ptr), sz);
+// }
+//   luabind::allocator = luabind_deboostified_allocator;
 
 
 
@@ -631,9 +634,8 @@ extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
 #ifdef _WINDOWS
    ThreadRunner::Init();
 #endif
-   luabind::allocator = luabind_deboostified_allocator;
 
-   open( lua.state() );
+   luabind::open( lua.state() );
    
    module( lua.state(), "NylonSysCore" ) [
       def( "addCallback", &addCallback ),

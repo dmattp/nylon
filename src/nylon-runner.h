@@ -1,4 +1,5 @@
 // Nylon Copyright (c) 2013 David M. Placek see [doc/license.txt]
+#include <iostream>
 #include <luabind/luabind.hpp>
 #include "sys/platform-defs.h"
 
@@ -54,7 +55,7 @@ public:
       catch ( const luabind::error& e )
       {
           // lua_State* l = e.state();
-          std::cout << "got exception during report=" << e.what() << std::endl;
+          std::cerr << "got exception during report=" << e.what() << std::endl;
       }
       postReport();
    }

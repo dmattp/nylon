@@ -1,3 +1,4 @@
 [submodule "luabind-deboostified"]
 	path = luabind-deboostified
-	url = https://github.com/dmattp/luabind-deboostified.git
+	url = https://github.com/ltjax/luabind-deboostified.git
+   
