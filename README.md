@@ -10,7 +10,7 @@ Distributed under the MIT license, please see [doc/license.txt] for details.
 
 # Prerequisites
 
-* lua5.2
+* lua5.3
 * luabind (requires boost)
 * cmake
 * glib-2.0 (linux only)

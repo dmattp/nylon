@@ -3,3 +3,6 @@
 \#*\#
 .\#*
 build/
+nylon/syscore.dll
+nylon/syscore.pdb
+

@@ -626,7 +626,9 @@ namespace {
 
 
 
-extern "C" DLLEXPORT  int luaopen_nylon_syscore( lua_State* L )
+extern "C"
+__declspec(dllexport)
+int luaopen_nylon_syscore( lua_State* L )
 {
    Lua lua( L );
    using namespace luabind;

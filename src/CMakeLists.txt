@@ -1,5 +1,8 @@
+cmake_minimum_required (VERSION 3.10) 
 # Create a library called "syscore" which includes the source file "NylonSysCore.cpp".
-# This cmake is rather a mess. 
+# This cmake is rather a mess.
+project(syscore VERSION 0.2.0 DESCRIPTION "Nylon system core scheduler and event loop")
+
 
 # This puts the output .so into '../nylon', which is okay for running from source tree,
 # but i really need a proper install, this is a hack.
@@ -8,12 +11,17 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/nylon")
 ##################################################################
 # MS/Windows Options
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-   include_directories( c:/usr/share/lua523/include c:/m/home/pkg/boost_1_55_0 )  # Customize for your location of lua and luabind headers
+  set(CMAKE_VS_PLATFORM_TOOLSET v141_xp)
+  set(NAME_LIBLUA "liblua53")
+  include_directories(
+    "${LUA_ROOT}/src" # Customize for your location of lua headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/../luabind-deboostified)  
+  
    include_directories( ./win ) # this is a directory in the Nylon source, leave this
    add_definitions( -DUNICODE=1 )
    # that's some hacky stuff
     # link directories must be specified prior to the library; see http://stackoverflow.com/questions/8190103/cmake-library-not-linking
-   link_directories( c:/usr/share/lua523 c:/usr/share/lua523/vendor/luabind/lib )
+   link_directories( "${LUA_ROOT}/lib" "${EXT_INSTALL_PATH}/luabind/lib" )
 
 ##################################################################
 # Linux Options.
@@ -22,6 +30,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 # so get CFLAGS and LDFLAGS options needed to include glib support.
 ##################################################################
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  set(NAME_LIBLUA "lua")
   execute_process( COMMAND pkg-config --cflags glib-2.0 OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GLIBCFLAGS )
   execute_process( COMMAND pkg-config --libs glib-2.0   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GLIBLDFLAGS )
   SET ( CMAKE_CXX_FLAGS "${GLIBCFLAGS} --std=c++14" )
@@ -39,8 +48,10 @@ endif()
 # "libsyscore.so" but just "syscore.so";
 # see  http://stackoverflow.com/questions/1564696/cmake-output-name-for-dynamic-loaded-library
 ##################################################################
-add_library (syscore SHARED NylonSysCore.cpp)
-set_target_properties( syscore PROPERTIES PREFIX "")
+add_library(syscore SHARED NylonSysCore.cpp)
+set_target_properties(syscore PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  PREFIX "")
 
 
 ##################################################################
@@ -53,9 +64,9 @@ set_target_properties( syscore PROPERTIES PREFIX "")
 # this up to use proper finding of installed lua builds.
 ##################################################################
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries( syscore lua523d luabind09-d )
+  target_link_libraries( syscore luabind ${NAME_LIBLUA} )
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  target_link_libraries( syscore lua rt luabind "${GLIBLDFLAGS}")
+  target_link_libraries( syscore luabind ${NAME_LIBLUA} rt "${GLIBLDFLAGS}")
 endif()
 
 
@@ -66,7 +77,7 @@ if ( MSVC )
     # really like that anymore.
     set_target_properties( syscore PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_CURRENT_SOURCE_DIR}/../nylon )
     set_target_properties( syscore PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/../nylon )
-endif ( MSVC )
+  endif ( MSVC )
 
 
 INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nylon-runner.h" DESTINATION include/nylon)
