@@ -21,3 +21,9 @@ add_subdirectory (src)
 
 enable_testing()
 add_test( NAME all-tests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests COMMAND lua run-all-tests.lua)
+
+
+INSTALL(FILES "${CMAKE_SOURCE_DIR}/nylon/debug.lua" DESTINATION /usr/share/lua/5.3/nylon)
+INSTALL(FILES "${CMAKE_SOURCE_DIR}/nylon/core.lua" DESTINATION /usr/share/lua/5.3/nylon)
+INSTALL(FILES "${CMAKE_SOURCE_DIR}/nylon/scheduler.lua" DESTINATION /usr/share/lua/5.3/nylon)
+

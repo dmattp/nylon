@@ -71,5 +71,6 @@ endif ( MSVC )
 
 INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nylon-runner.h" DESTINATION include/nylon)
 INSTALL(FILES "${CMAKE_CURRENT_SOURCE_DIR}/linux-gtk/sys/platform-defs.h" DESTINATION include/nylon/sys)
+
 INSTALL(TARGETS syscore DESTINATION /usr/lib/lua/5.3/nylon)
 
