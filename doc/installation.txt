@@ -5,6 +5,7 @@ Run "git submodule init" and "git submodule update" to pull in luabind library.
 Windows:
 
 * Modify [src/CMakeLists.txt] to specify the location of lua headers.
+* Build luabind-deboostified subdirectory and install.
 * Use standard CMake build process, e.g., mkdir build; cd build; cmake ..; cmake --build .; ctest -C 
 * Build process will create [syscore.so|dll]
 * To use Nylon it is recommended to put syscore.so|dll in the [nylon] subdirectory and modify your package.path 
