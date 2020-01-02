@@ -1,4 +1,5 @@
 -- Nylon Copyright (c) 2013 David M. Placek see [doc/license.txt]
+require 'nylon.syscore'
 
 -- Cord object public methods:
 --

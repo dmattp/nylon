@@ -638,6 +638,7 @@ int luaopen_nylon_syscore( lua_State* L )
 #endif
 
    luabind::open( lua.state() );
+   //std::cout << "Open nylonsyscore, state=" << (void *)lua.state() << std::endl; 
    
    module( lua.state(), "NylonSysCore" ) [
       def( "addCallback", &addCallback ),
