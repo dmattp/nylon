@@ -37,7 +37,7 @@ local pluggable_log_io = function( groups, text )
 
 --   local dt = os.date( '*t', tnow )
    config.outfile:write( os.date("%m%d %H:%M:", math.floor(tnow)) )
-   config.outfile:write( string.format("%05.3f ", tnowfrac ) )
+   config.outfile:write( string.format("%06.3f ", tnowfrac ) )
 
    local cord = Nylon.self
    if cord then
@@ -59,10 +59,12 @@ local log_disable = {
    ['trace,core,post'] = true
 }
 
+local progname = ''
+
 function Debug.configure( p )
    -- print( 'Got call to debug.configur, p.name=%s', tostring(p.name) )
    local o = {}
-   if not (p and p.nocordcheck) then
+   if not (p and (p.nocordcheck or p.program)) then
       Nylon = require 'nylon.core'()
    end
    local lconfig = {
@@ -73,7 +75,10 @@ function Debug.configure( p )
    if p and p.name then
       lconfig.name = p.name
    end
-   lconfig.filename = string.format('%s/%s.log', lconfig.dir, lconfig.name )
+   if p and p.program then
+      progname = p.program .. '/'
+   end
+   lconfig.filename = string.format('%s/%s%s.log', lconfig.dir, progname, lconfig.name )
    if p and p.filename then
       lconfig.filename = p.filename
    end
