@@ -205,7 +205,9 @@ namespace NylonSysCore
       bool m_exit;
    }; // end class Application
 
+
    std::recursive_mutex Application::luaLock_;
+    
    void
    Application::MainLoopWithSyseventCallback( const std::function<void(void)>& cbSysevent    )
    {

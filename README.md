@@ -10,10 +10,16 @@ Distributed under the MIT license, please see [doc/license.txt] for details.
 
 # Prerequisites
 
-* lua5.3
+* lua5.4
 * cmake
 * luabind-deboostified (included as submodule)
 * glib-2.0 (linux only)
+
+# Building
+
+Usual CMake build process.  I generally use either ninja or 'Visual Studio 19' as the generator target; anything else is untested.
+
+CMake may not have a "Lua54" package defined, but you can generally find the latest "Lua5x" package in the CMake directory and copy it to Lua54.cmake and update the references from e.g., 5.1 to 5.4 and this works fine.
 
 # Motivation
 
@@ -25,7 +31,9 @@ Lua's coroutine functions follow the admirable lua style in providing a powerful
 
 # Status
 
-As of 2014-10-24 nylon is still in early beta stage and under active development. Documentation is scarce.  There is a lot of noise in the sources that needs to be cleaned up.  The build process hasn't been fortified to a wide array of environments and will likely need some tweaking for your setup.
+As of 2014-10-24 nylon is still in early beta stage and under active development. Documentation is scarce.
+There is a lot of noise in the sources that needs to be cleaned up.  The build process hasn't been fortified
+to a wide array of environments and will likely need some tweaking for your setup.
 
 # Usage
 
@@ -55,7 +63,7 @@ This snippet creates a cord which will wake up every 1.5 seconds and print 'Hell
              while true do
                 print 'Hello world!'
                 cord:sleep( 1.5 )
-             end
+<             end
           end)
     
 Nylon also provides named events which a cord may wait on.  Events may be signaled by any other coroutine.

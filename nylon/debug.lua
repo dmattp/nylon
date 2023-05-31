@@ -15,13 +15,24 @@ local function openOutFile( name )
    if config.outfile then
       config.outfile:close()
    end
+   print('CREATING LOG FILE: ' .. name)
    config.outfile = io.open( name, 'w' )
    if not config.outfile then
       config.outfile = io.stdout
    end
 end
 
---local logmsgndx = 2
+-- with lua5.3, os.date will complain if given a non-integer type; must be cast with math.tointegr
+local tfloattostring
+if math.tointeger then
+   tfloattostring = function(tnow)
+      return os.date("%m%d %H:%M:", math.tointeger(math.floor(tnow)))
+   end
+else
+   tfloattostring = function(tnow)
+      return os.date("%m%d %H:%M:", math.floor(tnow))
+   end
+end
 
 local pluggable_log_io = function( groups, text )
 --   logmsgndx = logmsgndx + 1
@@ -36,7 +47,7 @@ local pluggable_log_io = function( groups, text )
    local tnowfrac = math.fmod( tnow, 60)
 
 --   local dt = os.date( '*t', tnow )
-   config.outfile:write( os.date("%m%d %H:%M:", math.floor(tnow)) )
+   config.outfile:write( tfloattostring(tnow) )
    config.outfile:write( string.format("%06.3f ", tnowfrac ) )
 
    local cord = Nylon.self
@@ -64,25 +75,35 @@ local progname = ''
 function Debug.configure( p )
    -- print( 'Got call to debug.configur, p.name=%s', tostring(p.name) )
    local o = {}
-   if not (p and (p.nocordcheck or p.program)) then
-      Nylon = require 'nylon.core'()
-   end
+   
    local lconfig = {
-      dir = (os.getenv 'nylonloghome') or (os.getenv 'TEMP') or '/tmp',
+      dir = config and config.dir or ((os.getenv 'nylonloghome') or (os.getenv 'TEMP') or '/tmp'),
       name = 'nylon'
    }
+   
    config = lconfig
-   if p and p.name then
-      lconfig.name = p.name
+   
+   if p then
+      lconfig.name = p.name or lconfig.name
+      lconfig.dir = p.dir or config.dir or lconfig.dir
+      progname = p.program and (p.progname .. '/') or progname
    end
-   if p and p.program then
-      progname = p.program .. '/'
-   end
-   lconfig.filename = string.format('%s/%s%s.log', lconfig.dir, progname, lconfig.name )
+
+   local date = os.date('%y%m%d-%H%M%S')
+   
+   lconfig.filename = string.format('%s/%s%s-%s.log', lconfig.dir, progname, lconfig.name, date)
+   
    if p and p.filename then
       lconfig.filename = p.filename
    end
+   
    openOutFile( lconfig.filename )
+
+   if not (p and (p.nocordcheck or p.program)) then
+      Nylon = require 'nylon.core'()
+   end
+   
+   
    return setmetatable( o, {
                            __index = function(t,key)
                               config = lconfig

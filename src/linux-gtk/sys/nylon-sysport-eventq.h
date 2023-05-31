@@ -36,6 +36,12 @@ namespace NylonSysCore {
           AppProcess();
        }
     public:
+       void setEventTimeoutMs( unsigned msTimeout )
+       {
+           // this seems to have been introduced in windows build to
+           // diagnose flaky wakeups.  do nothing.
+       }
+        
        static gint gtk_sys_poller( GPollFD* ufds, guint nfds, gint timeout_ )
        {
 //            if( 0 == ++calls%100000) {

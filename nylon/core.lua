@@ -36,6 +36,7 @@ require 'nylon.syscore'
 -- :
 
 local localdbg = false
+local run_on_error = nil
 
 -- local SysCore
 
@@ -47,7 +48,7 @@ local function metacow( orig_table, new_tbl )
    return new_tbl
 end
 
-local wv = require 'nylon.debug'{  name = string.format('nylon-core-%d',os.time() % 999),
+local wv = require 'nylon.debug'{  name = 'nylon-core',
                                nocordcheck = true }
 
 
@@ -338,8 +339,14 @@ function cord:resume()
    local rc, err = coroutine.resume( self.co )
 
    if not rc then
-      wv.log('core,error','coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
-             self.name, tostring(rc), tostring(err), debug.traceback(self.co) )
+      emsg = string.format(
+         'coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
+         self.name, tostring(rc), tostring(err), debug.traceback(self.co) )
+      if run_on_error then
+         run_on_error(emsg)
+      else
+         wv.log('core,error', emsg)
+      end
       if nylonErrorHandler then
          local msg = string.format('coroutine "%s" resume ERROR, returned [%s:%s]...\n\t%s', 
                                self.name, tostring(rc), tostring(err), debug.traceback(self.co))
@@ -1229,6 +1236,13 @@ end
 
 -- local function nylon_uptime()
 
+local function no_live_threads()
+   for k, v in pairs(comapper) do
+      return false
+   end
+   return true
+end
+
 local keepRunning = true
 
 local exports = {
@@ -1244,13 +1258,24 @@ local exports = {
                 require 'nylon.syscore'
                 return NylonSysCore.uptime()
              end,
-             run  = function()
+             run  = function(opts)
+                if opts and opts.on_error then
+                   run_on_error = opts.on_error
+                end
                 extern_reschedule = function() NylonSysCore.reschedule_empty() end
                 while keepRunning do
---                   wv.log 'RUN: syscore wait'
+                   wv.log 'RUN: syscore wait'
                    NylonSysCore.processAndWait()
---                   wv.log 'RUN: scheduling'
-                   nylon_schedule()
+
+                   local nothreads = no_live_threads() 
+                      
+                   wv.log( 'debug', 'RUN: scheduling nothreads=%s', (nothreads and 'y' or 'n'))
+
+                   if nothreads then 
+                      keepRunning = false
+                   else
+                      nylon_schedule()
+                   end
                 end
 --                wv.log( 'norm', 'nylon.run() returned, keepRunning=%s', keepRunning )
              end,
