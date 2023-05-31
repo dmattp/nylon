@@ -53,7 +53,7 @@ public:
       }
       catch ( const luabind::error& e )
       {
-          lua_State* l = e.state();
+          // lua_State* l = e.state();
           std::cout << "got exception during report=" << e.what() << std::endl;
       }
       postReport();

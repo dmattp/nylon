@@ -21,7 +21,17 @@ local function openOutFile( name )
    end
 end
 
---local logmsgndx = 2
+-- with lua5.3, os.date will complain if given a non-integer type; must be cast with math.tointegr
+local tfloattostring
+if math.tointeger then
+   tfloattostring = function(tnow)
+      return os.date("%m%d %H:%M:", math.tointeger(math.floor(tnow)))
+   end
+else
+   tfloattostring = function(tnow)
+      return os.date("%m%d %H:%M:", math.floor(tnow))
+   end
+end
 
 local pluggable_log_io = function( groups, text )
 --   logmsgndx = logmsgndx + 1
@@ -36,7 +46,7 @@ local pluggable_log_io = function( groups, text )
    local tnowfrac = math.fmod( tnow, 60)
 
 --   local dt = os.date( '*t', tnow )
-   config.outfile:write( os.date("%m%d %H:%M:", tnow) )
+   config.outfile:write( tfloattostring(tnow) )
    config.outfile:write( string.format("%05.3f ", tnowfrac ) )
 
    local cord = Nylon.self

@@ -5,3 +5,6 @@ build
 *.ilk
 *.pdb
 *~
+build-luabind
+build
+

@@ -36,6 +36,12 @@ namespace NylonSysCore {
           AppProcess();
        }
     public:
+       void setEventTimeoutMs( unsigned msTimeout )
+       {
+           // this seems to have been introduced in windows build to
+           // diagnose flaky wakeups.  do nothing.
+       }
+        
        static gint gtk_sys_poller( GPollFD* ufds, guint nfds, gint timeout_ )
        {
 //            if( 0 == ++calls%100000) {
@@ -98,6 +104,7 @@ namespace NylonSysCore {
           MySource* this1 = reinterpret_cast<MySource*>( source );
           this1->self->clearPipesAndDispatch();
           this1->mypoll.revents = 0;
+          return true;
        }
        static void gs_finalize (GSource    *source ){ /* Can be NULL */
 //          std::cout << "gs_finalize !!!" << std::endl;

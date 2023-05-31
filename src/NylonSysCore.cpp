@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <functional>
+#include <mutex>
 #include "sys/platform-defs.h"
 
 
@@ -30,7 +31,7 @@ namespace NylonSysCore
    class Application
    {
    public:
-      static recursive_mutex luaLock_;
+       static std::recursive_mutex luaLock_;
        
        static void Lock( bool yes )
       {
@@ -204,7 +205,8 @@ namespace NylonSysCore
       bool m_exit;
    }; // end class Application
 
-   recursive_mutex Application::luaLock_;
+    std::recursive_mutex Application::luaLock_;
+    
    void
    Application::MainLoopWithSyseventCallback( const std::function<void(void)>& cbSysevent    )
    {

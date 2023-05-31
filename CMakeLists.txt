@@ -7,15 +7,24 @@
 # mkdir build; cd build; cmake .. && cmake --build . && cp ./src/syscore.so ../nylon/ && ctest
 
 
-cmake_minimum_required (VERSION 2.6) 
+cmake_minimum_required (VERSION 3.0) 
 
 project (NYLON) 
 set(NYLON_VERSION_MAJOR 0)
 set(NYLON_VERSION_MINOR 1)
+set(LUABIND_BUILD_SHARED ON)
 
+if (WIN32)
+  set(LUA_INCLUDE_DIR c:/opt/lua54/src)
+else()
+  set(LUA_INCLUDE_DIR /usr/include/lua5.4)
+endif()
+
+
+add_subdirectory(luabind-deboostified)
 add_subdirectory (src) 
-#add_subdirectory (tests)
 
+#add_subdirectory (tests)
 # install rule for header files
 #INSTALL(FILES     "${CMAKE_CURRENT_SOURCE_DIR}/include/nlog.h" DESTINATION include)
 #INSTALL(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/nlog" DESTINATION include)
