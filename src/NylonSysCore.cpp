@@ -629,7 +629,7 @@ namespace {
 
 
 extern "C"
-__declspec(dllexport)
+DLLEXPORT
 int luaopen_nylon_syscore( lua_State* L )
 {
    Lua lua( L );

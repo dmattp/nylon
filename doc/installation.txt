@@ -2,20 +2,15 @@ All:
 
 Run "git submodule init" and "git submodule update" to pull in luabind library.
 
-Windows:
+standard CMake build process is normal; by convention (to match the nylabind
+packages), I build into a <build> subdirectory or <build-win> subdirectory.
 
-* Modify [src/CMakeLists.txt] to specify the location of lua headers.
-* Build luabind-deboostified subdirectory and install.
-* Use standard CMake build process, e.g., mkdir build; cd build; cmake ..; cmake --build .; ctest -C 
-* Build process will create [syscore.so|dll]
-* To use Nylon it is recommended to put syscore.so|dll in the [nylon] subdirectory and modify your package.path 
-  and package.cpath to include the nylon location, so that "require 'nylon.core'" will import [nylon/core.lua]
-  and "require 'nylon.syscore'" will import [nylon/syscore.so|dll].
+CMake sources attempt to locate the Lua54 package.  If you're not installed
+in a standard location because you are e.g, on braindead windows with
+whatever hack lua build you found or compiled yourself, you can define
+LUA_INCLUDE_DIR and/or LUA_LIBRARIES on the cmake generation command line.
 
-Linux notes:
+Running "cmake --install" after build should place lua and binary
+modules int /usr/share/lua/5.4 or /usr/lib/lua/5.4.
 
-* Currently the linux build dumps syscore.so in [build/src]; I recommend copying this
-  manually to the [nylon] subdirectory with [core.lua] but if you prefer the .so to
-  be elsewhere just be sure your package.cpath is set correctly to find syscore.so
-  when "require 'nylon.syscore'" is used.
-
+You are of course free to install by hand any way you like.

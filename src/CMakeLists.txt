@@ -17,7 +17,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   execute_process( COMMAND pkg-config --cflags glib-2.0 OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GLIBCFLAGS )
   execute_process( COMMAND pkg-config --libs glib-2.0   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GLIBLDFLAGS )
-  # SET ( CMAKE_CXX_FLAGS "${GLIBCFLAGS} --std=c++0x" )
+  SET ( CMAKE_CXX_FLAGS "${GLIBCFLAGS}" )
   include_directories( ./linux-gtk ${LUA_INCLUDE_DIR} ${LUABIND_INCLUDE_DIR} )  # Customize for your location of lua and luabind headers
 endif()
 
@@ -51,3 +51,4 @@ set_target_properties( syscore PROPERTIES PREFIX "")
 #endif ( MSVC )
 
 
+INSTALL(TARGETS syscore DESTINATION "${NYLON_INSTALL_LIB}/nylon/")
